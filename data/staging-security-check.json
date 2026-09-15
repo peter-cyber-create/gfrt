@@ -1,0 +1,48 @@
+{
+  "timestamp": "2026-09-14T19:40:30.543Z",
+  "stagingUrl": "https://127.0.0.1:8443",
+  "results": [
+    {
+      "name": "HTTPS health",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "Secure cookie on login",
+      "ok": true,
+      "detail": "Secure; HttpOnly attributes present (value redacted)"
+    },
+    {
+      "name": "HSTS header",
+      "ok": true,
+      "detail": "max-age=31536000; includeSubDomains, max-age=31536000; includeSubDomains"
+    },
+    {
+      "name": "CORS evil origin blocked",
+      "ok": true,
+      "detail": "401"
+    },
+    {
+      "name": "CSRF origin fail",
+      "ok": true,
+      "detail": "403"
+    },
+    {
+      "name": "401 unauthenticated",
+      "ok": true,
+      "detail": "401"
+    },
+    {
+      "name": "oversized body rejected",
+      "ok": true,
+      "detail": "413"
+    },
+    {
+      "name": "security headers scan",
+      "ok": true,
+      "detail": "xcto=nosniff xfo=SAMEORIGIN"
+    }
+  ],
+  "passed": 8,
+  "failed": 0
+}

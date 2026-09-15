@@ -1,0 +1,102 @@
+{
+  "found": [
+    {
+      "path": "/",
+      "status": 200,
+      "finalUrl": "https://musooka.site/",
+      "finalPath": "/",
+      "title": "Laravel",
+      "authGated": false
+    },
+    {
+      "path": "/login",
+      "status": 200,
+      "finalUrl": "https://musooka.site/login",
+      "finalPath": "/login",
+      "title": "Laravel",
+      "authGated": false
+    },
+    {
+      "path": "/register",
+      "status": 200,
+      "finalUrl": "https://musooka.site/register",
+      "finalPath": "/register",
+      "title": "Laravel",
+      "authGated": false
+    },
+    {
+      "path": "/password/reset",
+      "status": 200,
+      "finalUrl": "https://musooka.site/password/reset",
+      "finalPath": "/password/reset",
+      "title": "Laravel",
+      "authGated": false
+    },
+    {
+      "path": "/home",
+      "status": 200,
+      "finalUrl": "https://musooka.site/login",
+      "finalPath": "/login",
+      "title": "Laravel",
+      "authGated": true
+    },
+    {
+      "path": "/logout",
+      "status": 405,
+      "finalUrl": "https://musooka.site/logout",
+      "finalPath": "/logout",
+      "title": "🧨 The GET method is not supported for this route. Supported methods: POST.",
+      "authGated": false
+    },
+    {
+      "path": "/users",
+      "status": 200,
+      "finalUrl": "https://musooka.site/login",
+      "finalPath": "/login",
+      "title": "Laravel",
+      "authGated": true
+    },
+    {
+      "path": "/roles",
+      "status": 200,
+      "finalUrl": "https://musooka.site/login",
+      "finalPath": "/login",
+      "title": "Laravel",
+      "authGated": true
+    },
+    {
+      "path": "/api/user",
+      "status": 200,
+      "finalUrl": "https://musooka.site/login",
+      "finalPath": "/login",
+      "title": "Laravel",
+      "authGated": true
+    },
+    {
+      "path": "/password/email",
+      "status": 405,
+      "finalUrl": "https://musooka.site/password/email",
+      "finalPath": "/password/email",
+      "title": "🧨 The GET method is not supported for this route. Supported methods: POST.",
+      "authGated": false
+    },
+    {
+      "path": "/img/coa2.png",
+      "status": 200,
+      "finalUrl": "https://musooka.site/img/coa2.png",
+      "finalPath": "/img/coa2.png",
+      "title": "coa2.png (75×80)",
+      "authGated": false
+    },
+    {
+      "path": "/favicon.ico",
+      "status": 200,
+      "finalUrl": "https://musooka.site/favicon.ico",
+      "finalPath": "/favicon.ico",
+      "title": "",
+      "authGated": false
+    }
+  ],
+  "errors": [],
+  "probedAt": "2026-09-14T06:32:14.840Z"
+}

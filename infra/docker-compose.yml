@@ -1,0 +1,54 @@
+# Local development only. Does not deploy to musooka.site.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: musooka-postgres
+    environment:
+      POSTGRES_USER: musooka
+      POSTGRES_PASSWORD: musooka_dev_only
+      POSTGRES_DB: musooka_dev
+    ports:
+      - "5434:5432"
+    volumes:
+      - musooka_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U musooka -d musooka_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db_test:
+    image: postgres:16-alpine
+    container_name: musooka-postgres-test
+    environment:
+      POSTGRES_USER: musooka
+      POSTGRES_PASSWORD: musooka_dev_only
+      POSTGRES_DB: musooka_test
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U musooka -d musooka_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    profiles: ["full"]
+    build:
+      context: ../backend
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://musooka:musooka_dev_only@db:5432/musooka_dev?schema=public
+      SESSION_SECRET: local-dev-only-change-me-32c
+      COOKIE_SECURE: "false"
+      COOKIE_SAMESITE: lax
+      CORS_ORIGIN: http://127.0.0.1:5173,http://127.0.0.1:8080
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  musooka_pgdata:

@@ -1,0 +1,58 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+!.env.production.example
+!**/.env.example
+!**/.env.production.example
+backend/.env
+clone/.env
+infra/staging/.env
+
+# Dependencies & build
+node_modules/
+backend/node_modules/
+clone/node_modules/
+backend/dist/
+clone/dist/
+
+# Auth / browser state
+playwright/.auth/
+
+# TLS / keys / certs
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+infra/staging/certs/
+
+# Database dumps / backups
+*.sql
+*.dump
+*.sql.gz
+*.dump.gz
+*.enc
+!backend/prisma/migrations/**/*.sql
+data/staging-backups/
+backups/
+
+# Uploads / runtime storage
+backend/storage/
+**/data/uploads/
+storage/uploads/
+
+# Logs & OS
+*.log
+.DS_Store
+
+# Screenshots / recon live captures (may contain session artifacts)
+screenshots/
+data/live/
+
+# Local smoke output (host-specific; may reference credentials indirectly)
+data/production-smoke-report.json
+
+# Local tooling
+.vscode/
+.idea/

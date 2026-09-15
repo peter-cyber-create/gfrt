@@ -1,0 +1,97 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: musooka
+          POSTGRES_PASSWORD: musooka_dev_only
+          POSTGRES_DB: musooka_test
+        ports:
+          - 5435:5432
+        options: >-
+          --health-cmd "pg_isready -U musooka -d musooka_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://musooka:musooka_dev_only@127.0.0.1:5435/musooka_test?schema=public
+      SESSION_SECRET: ci-session-secret-32-characters-min
+      COOKIE_SECURE: "false"
+      CORS_ORIGIN: http://127.0.0.1:5173
+      EMAIL_PROVIDER: mock
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - name: Validate migration drift
+        run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --exit-code
+      - run: npm run typecheck
+      - run: npm test
+      - name: npm audit (production deps, fail on critical)
+        run: npm audit --omit=dev --audit-level=critical
+      - name: npm audit report (high+ advisory)
+        run: npm audit --omit=dev --audit-level=high || true
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clone
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: clone/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - name: npm audit (production deps, fail on critical)
+        run: npm audit --omit=dev --audit-level=critical
+      - name: npm audit report (high+ advisory)
+        run: npm audit --omit=dev --audit-level=high || true
+
+  playwright:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            clone/package-lock.json
+      - run: npm ci
+      - run: npm ci
+        working-directory: clone
+      - run: npx playwright install --with-deps chromium
+      - name: Start demo frontend
+        working-directory: clone
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 5173 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:5173 >/dev/null && exit 0
+            sleep 1
+          done
+          exit 1
+      - name: Playwright validate
+        run: CLONE_URL=http://127.0.0.1:5173 npm run validate

@@ -1,0 +1,428 @@
+[
+  {
+    "url": "https://musooka.site/",
+    "path": "/",
+    "title": "Laravel",
+    "status": 200,
+    "links": [
+      {
+        "text": "Forgot Your Password?",
+        "href": "https://musooka.site/password/reset"
+      }
+    ],
+    "headings": [],
+    "forms": [
+      {
+        "action": "https://musooka.site/login",
+        "method": "post",
+        "id": "",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_token",
+            "id": "",
+            "placeholder": "",
+            "required": false
+          },
+          {
+            "tag": "input",
+            "type": "email",
+            "name": "email",
+            "id": "email",
+            "placeholder": "Email",
+            "required": true
+          },
+          {
+            "tag": "input",
+            "type": "password",
+            "name": "password",
+            "id": "password",
+            "placeholder": "Password",
+            "required": true
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "remember",
+            "id": "remember",
+            "placeholder": "",
+            "required": false
+          }
+        ]
+      }
+    ],
+    "buttons": [
+      {
+        "text": "Login",
+        "type": "submit",
+        "classes": "btn btn-primary"
+      },
+      {
+        "text": "Forgot Your Password?",
+        "type": "",
+        "classes": "btn btn-link"
+      }
+    ],
+    "images": [
+      {
+        "src": "https://musooka.site/img/coa2.png",
+        "alt": "",
+        "width": 75,
+        "height": 80
+      }
+    ],
+    "tables": [],
+    "css": [
+      "https://fonts.googleapis.com/css?family=Nunito",
+      "https://musooka.site/css/app.css",
+      "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css",
+      "https://use.fontawesome.com/releases/v5.2.0/css/all.css",
+      "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css"
+    ],
+    "js": [
+      "https://musooka.site/js/app.js"
+    ],
+    "iframes": [],
+    "navLinks": [],
+    "modals": [],
+    "tabs": [],
+    "pagination": false,
+    "alerts": [],
+    "cards": [
+      {
+        "header": "Login",
+        "bodyPreview": "Global Fund Requisition Performance Tracker Login Remember Me Forgot Your Password?"
+      }
+    ],
+    "bootstrap": {
+      "navbar": false,
+      "sidebar": false,
+      "cards": 1,
+      "modals": 0,
+      "tables": 0,
+      "forms": 1,
+      "dropdowns": 0,
+      "tabs": 0,
+      "pagination": false,
+      "alerts": 0
+    },
+    "sections": [
+      {
+        "tag": "main",
+        "id": "",
+        "classes": "py-4"
+      }
+    ],
+    "visibleText": "Login\n\nGlobal Fund Requisition Performance Tracker\nLogin\nRemember Me\nForgot Your Password?"
+  },
+  {
+    "url": "https://musooka.site/login",
+    "path": "/login",
+    "title": "Laravel",
+    "status": 200,
+    "links": [
+      {
+        "text": "Forgot Your Password?",
+        "href": "https://musooka.site/password/reset"
+      }
+    ],
+    "headings": [],
+    "forms": [
+      {
+        "action": "https://musooka.site/login",
+        "method": "post",
+        "id": "",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_token",
+            "id": "",
+            "placeholder": "",
+            "required": false
+          },
+          {
+            "tag": "input",
+            "type": "email",
+            "name": "email",
+            "id": "email",
+            "placeholder": "Email",
+            "required": true
+          },
+          {
+            "tag": "input",
+            "type": "password",
+            "name": "password",
+            "id": "password",
+            "placeholder": "Password",
+            "required": true
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "remember",
+            "id": "remember",
+            "placeholder": "",
+            "required": false
+          }
+        ]
+      }
+    ],
+    "buttons": [
+      {
+        "text": "Login",
+        "type": "submit",
+        "classes": "btn btn-primary"
+      },
+      {
+        "text": "Forgot Your Password?",
+        "type": "",
+        "classes": "btn btn-link"
+      }
+    ],
+    "images": [
+      {
+        "src": "https://musooka.site/img/coa2.png",
+        "alt": "",
+        "width": 75,
+        "height": 80
+      }
+    ],
+    "tables": [],
+    "css": [
+      "https://fonts.googleapis.com/css?family=Nunito",
+      "https://musooka.site/css/app.css",
+      "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css",
+      "https://use.fontawesome.com/releases/v5.2.0/css/all.css",
+      "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css"
+    ],
+    "js": [
+      "https://musooka.site/js/app.js"
+    ],
+    "iframes": [],
+    "navLinks": [],
+    "modals": [],
+    "tabs": [],
+    "pagination": false,
+    "alerts": [],
+    "cards": [
+      {
+        "header": "Login",
+        "bodyPreview": "Global Fund Requisition Performance Tracker Login Remember Me Forgot Your Password?"
+      }
+    ],
+    "bootstrap": {
+      "navbar": false,
+      "sidebar": false,
+      "cards": 1,
+      "modals": 0,
+      "tables": 0,
+      "forms": 1,
+      "dropdowns": 0,
+      "tabs": 0,
+      "pagination": false,
+      "alerts": 0
+    },
+    "sections": [
+      {
+        "tag": "main",
+        "id": "",
+        "classes": "py-4"
+      }
+    ],
+    "visibleText": "Login\n\nGlobal Fund Requisition Performance Tracker\nLogin\nRemember Me\nForgot Your Password?"
+  },
+  {
+    "url": "https://musooka.site/register",
+    "path": "/register",
+    "title": "Laravel",
+    "status": 200,
+    "links": [],
+    "headings": [],
+    "forms": [
+      {
+        "action": "https://musooka.site/register",
+        "method": "post",
+        "id": "",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_token",
+            "id": "",
+            "placeholder": "",
+            "required": false
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "name",
+            "id": "name",
+            "placeholder": "",
+            "required": true
+          },
+          {
+            "tag": "input",
+            "type": "email",
+            "name": "email",
+            "id": "email",
+            "placeholder": "",
+            "required": true
+          },
+          {
+            "tag": "input",
+            "type": "password",
+            "name": "password",
+            "id": "password",
+            "placeholder": "",
+            "required": true
+          },
+          {
+            "tag": "input",
+            "type": "password",
+            "name": "password_confirmation",
+            "id": "password-confirm",
+            "placeholder": "",
+            "required": true
+          }
+        ]
+      }
+    ],
+    "buttons": [
+      {
+        "text": "Register",
+        "type": "submit",
+        "classes": "btn btn-primary"
+      }
+    ],
+    "images": [],
+    "tables": [],
+    "css": [
+      "https://fonts.googleapis.com/css?family=Nunito",
+      "https://musooka.site/css/app.css",
+      "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css",
+      "https://use.fontawesome.com/releases/v5.2.0/css/all.css",
+      "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css"
+    ],
+    "js": [
+      "https://musooka.site/js/app.js"
+    ],
+    "iframes": [],
+    "navLinks": [],
+    "modals": [],
+    "tabs": [],
+    "pagination": false,
+    "alerts": [],
+    "cards": [
+      {
+        "header": "Register",
+        "bodyPreview": "Name E-Mail Address Password Confirm Password Register"
+      }
+    ],
+    "bootstrap": {
+      "navbar": false,
+      "sidebar": false,
+      "cards": 1,
+      "modals": 0,
+      "tables": 0,
+      "forms": 1,
+      "dropdowns": 0,
+      "tabs": 0,
+      "pagination": false,
+      "alerts": 0
+    },
+    "sections": [
+      {
+        "tag": "main",
+        "id": "",
+        "classes": "py-4"
+      }
+    ],
+    "visibleText": "Register\nName\nE-Mail Address\nPassword\nConfirm Password\nRegister"
+  },
+  {
+    "url": "https://musooka.site/password/reset",
+    "path": "/password/reset",
+    "title": "Laravel",
+    "status": 200,
+    "links": [],
+    "headings": [],
+    "forms": [
+      {
+        "action": "https://musooka.site/password/email",
+        "method": "post",
+        "id": "",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_token",
+            "id": "",
+            "placeholder": "",
+            "required": false
+          },
+          {
+            "tag": "input",
+            "type": "email",
+            "name": "email",
+            "id": "email",
+            "placeholder": "",
+            "required": true
+          }
+        ]
+      }
+    ],
+    "buttons": [
+      {
+        "text": "Send Password Reset Link",
+        "type": "submit",
+        "classes": "btn btn-primary"
+      }
+    ],
+    "images": [],
+    "tables": [],
+    "css": [
+      "https://fonts.googleapis.com/css?family=Nunito",
+      "https://musooka.site/css/app.css",
+      "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css",
+      "https://use.fontawesome.com/releases/v5.2.0/css/all.css",
+      "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css"
+    ],
+    "js": [
+      "https://musooka.site/js/app.js"
+    ],
+    "iframes": [],
+    "navLinks": [],
+    "modals": [],
+    "tabs": [],
+    "pagination": false,
+    "alerts": [],
+    "cards": [
+      {
+        "header": "Reset Password",
+        "bodyPreview": "E-Mail Address Send Password Reset Link"
+      }
+    ],
+    "bootstrap": {
+      "navbar": false,
+      "sidebar": false,
+      "cards": 1,
+      "modals": 0,
+      "tables": 0,
+      "forms": 1,
+      "dropdowns": 0,
+      "tabs": 0,
+      "pagination": false,
+      "alerts": 0
+    },
+    "sections": [
+      {
+        "tag": "main",
+        "id": "",
+        "classes": "py-4"
+      }
+    ],
+    "visibleText": "Reset Password\nE-Mail Address\nSend Password Reset Link"
+  }
+]

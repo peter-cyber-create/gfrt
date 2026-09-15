@@ -1,0 +1,69 @@
+{
+  "generatedAt": "2026-09-14T09:03:38.358Z",
+  "productionStatus": {
+    "dns": true,
+    "tcp443": true,
+    "tls": true,
+    "http": true,
+    "laravel": true,
+    "loginAvailable": true,
+    "database": null,
+    "classification": "ok_login_available",
+    "title": "Laravel",
+    "readyForAuthCrawl": true
+  },
+  "liveDataPresent": false,
+  "liveRecon": {
+    "at": "2026-09-14T09:02:16.464Z",
+    "finishedAt": "2026-09-14T09:02:50.762Z",
+    "healthOk": true,
+    "sessionOk": false,
+    "crawlOk": false,
+    "liveDir": "data/live/",
+    "note": "Authenticated recon attempted."
+  },
+  "routes": {
+    "localCount": 11,
+    "liveCount": 0,
+    "shared": [],
+    "onlyInLocalClone": [
+      "/login",
+      "/register",
+      "/password/reset",
+      "/home",
+      "/requisitions",
+      "/performance",
+      "/users",
+      "/roles",
+      "/reports",
+      "/analytics",
+      "/settings"
+    ],
+    "onlyInLive": []
+  },
+  "navigation": {
+    "local": [
+      "/home",
+      "/requisitions",
+      "/performance",
+      "/users",
+      "/roles",
+      "/reports",
+      "/analytics",
+      "/settings"
+    ],
+    "liveTop": [],
+    "liveSidebar": [],
+    "note": "No live navigation captured yet"
+  },
+  "pages": {
+    "liveTitles": {},
+    "formAndSectionDiffs": []
+  },
+  "applicationMapLive": null,
+  "recommendations": [
+    "Run npm run production:recon when the production database is healthy.",
+    "Do not auto-overwrite local clone; update pages intentionally after review.",
+    "Treat proposed RBAC/status codes as provisional until live UI confirms them."
+  ]
+}

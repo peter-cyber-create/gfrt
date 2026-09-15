@@ -1,0 +1,18 @@
+[
+  {
+    "_type": "user",
+    "legacyId": 101,
+    "email": "sample.user@legacy.local",
+    "name": "Sample Legacy User",
+    "status": "active",
+    "role": "requester"
+  },
+  {
+    "_type": "requisition",
+    "legacyId": 5001,
+    "number": "REQ-LEG-5001",
+    "status": "submitted",
+    "facility": "Legacy Facility",
+    "amount": 150000
+  }
+]

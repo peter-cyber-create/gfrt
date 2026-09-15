@@ -1,0 +1,154 @@
+[
+  {
+    "page": "/",
+    "action": "https://musooka.site/login",
+    "method": "post",
+    "id": "",
+    "inputs": [
+      {
+        "tag": "input",
+        "type": "hidden",
+        "name": "_token",
+        "id": "",
+        "placeholder": "",
+        "required": false
+      },
+      {
+        "tag": "input",
+        "type": "email",
+        "name": "email",
+        "id": "email",
+        "placeholder": "Email",
+        "required": true
+      },
+      {
+        "tag": "input",
+        "type": "password",
+        "name": "password",
+        "id": "password",
+        "placeholder": "Password",
+        "required": true
+      },
+      {
+        "tag": "input",
+        "type": "checkbox",
+        "name": "remember",
+        "id": "remember",
+        "placeholder": "",
+        "required": false
+      }
+    ]
+  },
+  {
+    "page": "/login",
+    "action": "https://musooka.site/login",
+    "method": "post",
+    "id": "",
+    "inputs": [
+      {
+        "tag": "input",
+        "type": "hidden",
+        "name": "_token",
+        "id": "",
+        "placeholder": "",
+        "required": false
+      },
+      {
+        "tag": "input",
+        "type": "email",
+        "name": "email",
+        "id": "email",
+        "placeholder": "Email",
+        "required": true
+      },
+      {
+        "tag": "input",
+        "type": "password",
+        "name": "password",
+        "id": "password",
+        "placeholder": "Password",
+        "required": true
+      },
+      {
+        "tag": "input",
+        "type": "checkbox",
+        "name": "remember",
+        "id": "remember",
+        "placeholder": "",
+        "required": false
+      }
+    ]
+  },
+  {
+    "page": "/register",
+    "action": "https://musooka.site/register",
+    "method": "post",
+    "id": "",
+    "inputs": [
+      {
+        "tag": "input",
+        "type": "hidden",
+        "name": "_token",
+        "id": "",
+        "placeholder": "",
+        "required": false
+      },
+      {
+        "tag": "input",
+        "type": "text",
+        "name": "name",
+        "id": "name",
+        "placeholder": "",
+        "required": true
+      },
+      {
+        "tag": "input",
+        "type": "email",
+        "name": "email",
+        "id": "email",
+        "placeholder": "",
+        "required": true
+      },
+      {
+        "tag": "input",
+        "type": "password",
+        "name": "password",
+        "id": "password",
+        "placeholder": "",
+        "required": true
+      },
+      {
+        "tag": "input",
+        "type": "password",
+        "name": "password_confirmation",
+        "id": "password-confirm",
+        "placeholder": "",
+        "required": true
+      }
+    ]
+  },
+  {
+    "page": "/password/reset",
+    "action": "https://musooka.site/password/email",
+    "method": "post",
+    "id": "",
+    "inputs": [
+      {
+        "tag": "input",
+        "type": "hidden",
+        "name": "_token",
+        "id": "",
+        "placeholder": "",
+        "required": false
+      },
+      {
+        "tag": "input",
+        "type": "email",
+        "name": "email",
+        "id": "email",
+        "placeholder": "",
+        "required": true
+      }
+    ]
+  }
+]

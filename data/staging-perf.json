@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-09-14T11:23:16.055Z",
+  "stagingUrl": "https://127.0.0.1:8443",
+  "baselineFile": "/home/peter/Projects/MOH/musooka-recon/data/perf-baseline.json",
+  "timings": [
+    {
+      "name": "login",
+      "stagingMs": 151,
+      "baselineMs": 130,
+      "deltaMs": 21
+    },
+    {
+      "name": "list_requisitions",
+      "stagingMs": 19,
+      "baselineMs": 14,
+      "deltaMs": 5
+    },
+    {
+      "name": "dashboard",
+      "stagingMs": 16,
+      "baselineMs": 10,
+      "deltaMs": 6
+    },
+    {
+      "name": "requisition_detail",
+      "stagingMs": 23,
+      "baselineMs": 15,
+      "deltaMs": 8
+    }
+  ]
+}

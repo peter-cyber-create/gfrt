@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-09-14T11:00:13.673Z",
+  "apiBase": "http://127.0.0.1:4000",
+  "timings": [
+    {
+      "name": "login",
+      "ms": 130
+    },
+    {
+      "name": "list_requisitions",
+      "ms": 14
+    },
+    {
+      "name": "dashboard",
+      "ms": 10
+    },
+    {
+      "name": "requisition_detail",
+      "ms": 15
+    }
+  ]
+}

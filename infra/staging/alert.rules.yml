@@ -1,0 +1,22 @@
+groups:
+  - name: musooka_staging_alerts
+    rules:
+      - alert: MusookaApplicationDown
+        expr: probe_success{target=~".*/health"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          environment: staging
+        annotations:
+          summary: "Musooka staging API health probe failed"
+          description: "Blackbox probe to {{ $labels.target }} has been failing for 1 minute."
+
+      - alert: MusookaReadyCheckFailed
+        expr: probe_success{target=~".*/ready"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          environment: staging
+        annotations:
+          summary: "Musooka staging API ready probe failed"
+          description: "Database readiness at {{ $labels.target }} is failing."

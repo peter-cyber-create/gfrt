@@ -1,0 +1,267 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  DISABLED
+}
+
+enum RequisitionStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  email        String     @unique
+  name         String
+  passwordHash String     @map("password_hash")
+  status       UserStatus @default(ACTIVE)
+  departmentId String?    @map("department_id") @db.Uuid
+  phone        String?
+  failedLogins Int        @default(0) @map("failed_logins")
+  lockedUntil  DateTime?  @map("locked_until")
+  lastLoginAt  DateTime?  @map("last_login_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  department    Department?    @relation(fields: [departmentId], references: [id])
+  userRoles     UserRole[]
+  sessions            Session[]
+  passwordResetTokens PasswordResetToken[]
+  requisitions        Requisition[]  @relation("RequesterRequisitions")
+  approvals     Approval[]
+  statusEvents  StatusHistory[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+
+  @@index([departmentId])
+  @@index([status])
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(uuid()) @db.Uuid
+  code        String  @unique
+  label       String
+  groupName   String  @map("group_name")
+  description String?
+
+  rolePermissions RolePermission[]
+
+  @@index([groupName])
+  @@map("permissions")
+}
+
+model UserRole {
+  userId     String   @map("user_id") @db.Uuid
+  roleId     String   @map("role_id") @db.Uuid
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model Department {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users         User[]
+  requisitions  Requisition[]
+
+  @@map("departments")
+}
+
+model Requisition {
+  id           String            @id @default(uuid()) @db.Uuid
+  number       String            @unique
+  facility     String
+  district     String
+  departmentId String            @map("department_id") @db.Uuid
+  status       RequisitionStatus @default(DRAFT)
+  amountValue  Int               @map("amount_value")
+  description  String
+  requesterId  String            @map("requester_id") @db.Uuid
+  submittedAt  DateTime?         @map("submitted_at")
+  requiredAt   DateTime?         @map("required_at")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  department Department      @relation(fields: [departmentId], references: [id])
+  requester  User            @relation("RequesterRequisitions", fields: [requesterId], references: [id])
+  items      RequisitionItem[]
+  approvals  Approval[]
+  history    StatusHistory[]
+  attachments Attachment[]
+
+  @@index([status])
+  @@index([departmentId])
+  @@index([requesterId])
+  @@index([submittedAt])
+  @@map("requisitions")
+}
+
+model RequisitionItem {
+  id            String @id @default(uuid()) @db.Uuid
+  requisitionId String @map("requisition_id") @db.Uuid
+  description   String
+  quantity      Int
+  unit          String?
+  unitCost      Int?    @map("unit_cost")
+
+  requisition Requisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+
+  @@index([requisitionId])
+  @@map("requisition_items")
+}
+
+model Approval {
+  id            String   @id @default(uuid()) @db.Uuid
+  requisitionId String   @map("requisition_id") @db.Uuid
+  actorId       String   @map("actor_id") @db.Uuid
+  decision      String
+  comment       String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  requisition Requisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+  actor       User        @relation(fields: [actorId], references: [id])
+
+  @@index([requisitionId])
+  @@map("approvals")
+}
+
+model StatusHistory {
+  id            String             @id @default(uuid()) @db.Uuid
+  requisitionId String             @map("requisition_id") @db.Uuid
+  fromStatus    RequisitionStatus? @map("from_status")
+  toStatus      RequisitionStatus  @map("to_status")
+  actorId       String?            @map("actor_id") @db.Uuid
+  note          String?
+  createdAt     DateTime           @default(now()) @map("created_at")
+
+  requisition Requisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+  actor       User?       @relation(fields: [actorId], references: [id])
+
+  @@index([requisitionId, createdAt])
+  @@map("status_history")
+}
+
+model Attachment {
+  id            String   @id @default(uuid()) @db.Uuid
+  requisitionId String   @map("requisition_id") @db.Uuid
+  filename      String
+  mimeType      String   @map("mime_type")
+  sizeBytes     Int      @map("size_bytes")
+  storageKey    String   @map("storage_key")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  requisition Requisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+
+  @@index([requisitionId])
+  @@map("attachments")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  text      String
+  unread    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, unread])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  actorId       String?  @map("actor_id") @db.Uuid
+  action        String
+  entity        String
+  entityId      String   @map("entity_id")
+  requestId     String?  @map("request_id")
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([actorId, createdAt])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  ip        String?
+  userAgent String?  @map("user_agent")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}

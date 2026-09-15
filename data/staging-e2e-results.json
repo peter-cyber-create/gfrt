@@ -1,0 +1,73 @@
+{
+  "timestamp": "2026-09-14T11:23:15.211Z",
+  "stagingUrl": "https://127.0.0.1:8443",
+  "passed": 13,
+  "failed": 0,
+  "results": [
+    {
+      "name": "health",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "admin login",
+      "ok": true,
+      "detail": "https://127.0.0.1:8443/home"
+    },
+    {
+      "name": "dashboard",
+      "ok": true,
+      "detail": "https://127.0.0.1:8443/home"
+    },
+    {
+      "name": "requisitions page",
+      "ok": true,
+      "detail": "https://127.0.0.1:8443/requisitions"
+    },
+    {
+      "name": "requisitions search/filter",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "users page",
+      "ok": true,
+      "detail": "https://127.0.0.1:8443/users"
+    },
+    {
+      "name": "roles page",
+      "ok": true,
+      "detail": "https://127.0.0.1:8443/roles"
+    },
+    {
+      "name": "reports page",
+      "ok": true,
+      "detail": "https://127.0.0.1:8443/reports"
+    },
+    {
+      "name": "settings/audit",
+      "ok": true,
+      "detail": "https://127.0.0.1:8443/settings"
+    },
+    {
+      "name": "reviewer login",
+      "ok": true,
+      "detail": "https://127.0.0.1:8443/home"
+    },
+    {
+      "name": "user login",
+      "ok": true,
+      "detail": "https://127.0.0.1:8443/home"
+    },
+    {
+      "name": "user denied approve",
+      "ok": true,
+      "detail": "no approve button visible"
+    },
+    {
+      "name": "protected route after logout",
+      "ok": true,
+      "detail": "https://127.0.0.1:8443/login"
+    }
+  ]
+}
