@@ -126,6 +126,13 @@ const envSchema = z
           message: "Production DATABASE_URL must not point at development/test databases.",
         });
       }
+      if (dbUrl.includes("127.0.0.1") || dbUrl.includes("localhost")) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["DATABASE_URL"],
+          message: "Production DATABASE_URL must not use localhost/127.0.0.1.",
+        });
+      }
       if (data.FORCE_TX_FAILURE) {
         ctx.addIssue({
           code: "custom",

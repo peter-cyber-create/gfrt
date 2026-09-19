@@ -3,6 +3,11 @@ name: ci
 on:
   push:
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   backend:
@@ -40,6 +45,7 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: npx prisma generate
+      - run: npx prisma validate
       - run: npx prisma migrate deploy
       - name: Validate migration drift
         run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --exit-code
@@ -63,7 +69,23 @@ jobs:
           cache: npm
           cache-dependency-path: clone/package-lock.json
       - run: npm ci
-      - run: npm run build
+      - name: Production-mode frontend build
+        env:
+          VITE_DEMO_MODE: "false"
+          VITE_DATA_SOURCE: api
+          VITE_API_BASE_URL: ""
+          VITE_STAGING_QUICK_LOGIN: "false"
+          VITE_STAGING_PRESENTATION_RESET: "false"
+        run: npm run build
+      - name: Assert production build flags
+        run: |
+          js=$(ls dist/assets/index-*.js | head -1)
+          # Same-origin API build must not bake a localhost API base
+          if rg -n '127\.0\.0\.1:4000' "$js"; then
+            echo "Forbidden localhost API base found in production bundle" >&2
+            exit 1
+          fi
+          echo "Production bundle checks passed ($js)"
       - name: npm audit (production deps, fail on critical)
         run: npm audit --omit=dev --audit-level=critical
       - name: npm audit report (high+ advisory)
@@ -86,6 +108,9 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Start demo frontend
         working-directory: clone
+        env:
+          VITE_DEMO_MODE: "true"
+          VITE_DATA_SOURCE: mock
         run: |
           npm run dev -- --host 127.0.0.1 --port 5173 &
           for i in $(seq 1 30); do
@@ -93,5 +118,45 @@ jobs:
             sleep 1
           done
           exit 1
-      - name: Playwright validate
+      - name: Playwright validate (demo mode)
         run: CLONE_URL=http://127.0.0.1:5173 npm run validate
+
+  production-config-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Reject insecure production example misuse
+        run: |
+          # Placeholder example must fail the production gate (proves fail-fast)
+          if NODE_ENV=production ENV_FILE=.env.production.example npm run production:config-check; then
+            echo "Expected production:config-check to fail on placeholders" >&2
+            exit 1
+          fi
+          echo "production:config-check correctly rejected placeholders"
+      - name: Secret scan (tracked files)
+        run: |
+          # Fail if common secret patterns appear in the index
+          if git grep -nE '(BEGIN (RSA |OPENSSH )?PRIVATE KEY|AKIA[0-9A-Z]{16}|demo1234|Pass123!)' \
+            -- ':!.github/workflows/ci.yml' ':!scripts/staging-up.sh' ':!docs/**' \
+            ':!infra/staging/.env.example' 2>/dev/null; then
+            echo "Potential secrets found in tracked files" >&2
+            exit 1
+          fi
+          echo "Secret scan passed"
+
+  # Manual production deploy — never runs on push/PR by default
+  deploy-production:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    needs: [backend, frontend, playwright, production-config-gate]
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deployment placeholder
+        run: |
+          echo "Wire this job to your host using GitHub Environments secrets."
+          echo "Do not auto-deploy. Prefer: PR → CI → manual approval → deploy."
+          echo "See docs/GITHUB_DEPLOYMENT.md"

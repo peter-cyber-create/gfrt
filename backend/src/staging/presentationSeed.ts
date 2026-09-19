@@ -290,7 +290,10 @@ export async function seedPresentation(
   if (process.env.NODE_ENV === "production") {
     throw new Error("seedPresentation must not run in production.");
   }
-  const password = options.password || process.env.STAGING_SEED_PASSWORD || "demo1234";
+  const password = options.password || process.env.STAGING_SEED_PASSWORD;
+  if (!password) {
+    throw new Error("STAGING_SEED_PASSWORD is required for staging/presentation seed.");
+  }
   const requisitionCount = options.requisitionCount ?? 180;
   const rand = mulberry32(20260915);
 

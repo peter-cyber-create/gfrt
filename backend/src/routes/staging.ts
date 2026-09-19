@@ -33,7 +33,7 @@ stagingRouter.post(
       assertStagingPresentationResetAllowed();
       const actorEmail = req.user!.email;
       const result = await seedPresentation(prisma, {
-        password: process.env.STAGING_SEED_PASSWORD || "demo1234",
+        password: process.env.STAGING_SEED_PASSWORD,
         requisitionCount: Number(process.env.STAGING_SEED_REQUISITIONS || 180),
       });
       // Seed recreates users — resolve actor by email for the audit row.

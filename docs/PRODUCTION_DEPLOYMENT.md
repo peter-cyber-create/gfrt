@@ -1,45 +1,61 @@
-# Production deployment runbook
+# Production deployment runbook (GFRT)
 
-**Do not execute against current musooka.site.**
+**Do not execute against musooka.site or its database.**
+
+Repository: `git@github.com:peter-cyber-create/gfrt.git`
 
 ## Preconditions
 
-- [ ] Org host provisioned (CPU/RAM/disk sized)
-- [ ] Secrets in secret store (see `PRODUCTION_CONFIG_AUDIT.md`)
-- [ ] Postgres provisioned; app role least-privilege
-- [ ] Backup destination + encryption keys ready
-- [ ] SMTP ready
-- [ ] TLS/DNS ready **or** temporary internal hostname for candidate
-- [ ] Release candidate tagged (`docs/RELEASE_BASELINE.md`)
+- [ ] Host provisioned; Docker available
+- [ ] Secrets prepared from `.env.production.example` → secure `infra/production/.env` (gitignored)
+- [ ] Postgres reachable only on private network (compose does **not** publish DB ports)
+- [ ] SMTP credentials ready (not Mailpit)
+- [ ] TLS/DNS or internal candidate hostname ready
+- [ ] Encrypted backup destination ready
+- [ ] CI green on the release SHA (`docs/GITHUB_DEPLOYMENT.md`)
+- [ ] `NODE_ENV=production ENV_FILE=… npm run production:config-check` passes against **real** secrets (not the example file)
 
 ## Sequence
 
-1. **Provision infrastructure** — VMs/containers, private DB network, firewall (no public Postgres)
-2. **Configure secrets** — inject env; never bake into images
-3. **Provision database** — create DB + `musooka_app` role; no superuser for app
-4. **Configure backup** — enable job per `PRODUCTION_BACKUP_PLAN.md`
-5. **Deploy application** — build images from RC fingerprint; Nginx + API + frontend
-6. **Run migrations** — `prisma migrate deploy` forward-only; record versions. **Do not run `db:seed`.**
-7. **Health check** — `/health` 200; `/ready` database true
-8. **Smoke test** — `BASE_URL=https://<candidate> npm run production:smoke` (explicit URL; never default to musooka.site)
-9. **Config gate** — `NODE_ENV=production ENV_FILE=… npm run production:config-check` before go-live
-10. **Security verification** — headers, Secure cookies, CORS, authz spot-checks
-11. **Enable monitoring** — scrape health/ready; wire alerts when destination exists
-12. **Verify backups** — first encrypted dump + restore to isolated DB
-13. **Approve cutover** — only then follow `PRODUCTION_CUTOVER.md`
+1. **Checkout release SHA** on the deploy host (or CI artifact).
+2. **Configure secrets** — `infra/production/.env` from the production template; never bake into images.
+3. **Build & start** (from `infra/production`):
 
-## Parallel / blue-green
-
-```
-Legacy Musooka (musooka.site)     New stack (isolated candidate)
-        │                                    │
-        │  remains untouched                 │  validate fully
-        ▼                                    ▼
-   Existing users ◄──── DNS/proxy switch ────┘  (after approval)
+```bash
+chmod +x api-entrypoint.sh db-init/01-app-user.sh
+docker compose --env-file .env up --build -d
 ```
 
-Rollback: reverse DNS/proxy to legacy; leave new stack intact for forensics.
+4. **Migrations** — run automatically in `api-entrypoint.sh` via `prisma migrate deploy`. **No seed.**
+5. **Health**
+   - `GET /health` → 200
+   - `GET /ready` → `{ "status":"ready", "database": true }`
+6. **Smoke** — `BASE_URL=https://<candidate> npm run production:smoke` (explicit URL; never default to musooka.site)
+7. **Config gate** — production:config-check with the live env file
+8. **Operator reverse proxy** — adapt `nginx.example.conf` manually if needed (do not auto-install Nginx)
+9. **Backups** — first encrypted dump + restore drill (`docs/PRODUCTION_BACKUP_PLAN.md`)
+10. **Cutover** — only after acceptance (`docs/PRODUCTION_CUTOVER.md`)
 
-## Migration during deploy
+## What this stack does **not** do
 
-If legacy data is required: complete dry-run + isolated load **before** step 12. Never migrate as an afterthought during DNS flip.
+- Does not touch UFW / netplan / cloud-init
+- Does not install or reconfigure host Nginx automatically
+- Does not seed presentation/demo users or the 180 requisitions
+- Does not connect to musooka.site
+
+## Verify deployment
+
+| Check | Expect |
+|-------|--------|
+| `/health` | ok |
+| `/ready` | database true |
+| Login | real admin user from **production** provisioning (not `@gfrt.local` staging accounts) |
+| Create → submit → review → approve | works with RBAC |
+| Reports/analytics/performance | numbers match API/DB |
+| CSV export | matches filtered API data |
+| Password reset | SMTP delivery |
+| Logout | session invalidated |
+
+## Rollback
+
+See `docs/ROLLBACK.md`.

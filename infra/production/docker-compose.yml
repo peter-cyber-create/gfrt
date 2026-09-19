@@ -1,0 +1,95 @@
+# Production-oriented compose — does NOT deploy to musooka.site.
+# Secrets: copy ../../.env.production.example → infra/production/.env (gitignored).
+# Postgres is not published to the host network.
+#
+# Usage (from this directory):
+#   docker compose --env-file .env up --build -d
+# Nginx on the host (if any) is operator-managed — not configured by this file.
+
+name: gfrt-production
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: gfrt-prod-db
+    restart: unless-stopped
+    networks: [gfrt_prod]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_DB: ${POSTGRES_DB:-musooka_prod}
+    volumes:
+      - gfrt_pgdata:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d:ro
+    # No host ports — stay on the internal Docker network only.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-musooka_prod}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  api:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    container_name: gfrt-prod-api
+    restart: unless-stopped
+    networks: [gfrt_prod]
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      COOKIE_SECURE: "true"
+      EMAIL_PROVIDER: smtp
+      DATABASE_URL: postgresql://musooka_app:${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD required}@db:5432/${POSTGRES_DB:-musooka_prod}?schema=public
+      MIGRATE_DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-musooka_prod}?schema=public
+      STORAGE_ROOT: /app/data/uploads
+    volumes:
+      - gfrt_uploads:/app/data/uploads
+      - ./api-entrypoint.sh:/app/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/app/entrypoint.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "4000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+
+  web:
+    build:
+      context: ../../clone
+      dockerfile: Dockerfile
+      args:
+        VITE_DEMO_MODE: "false"
+        VITE_DATA_SOURCE: api
+        VITE_API_BASE_URL: ""
+        VITE_STAGING_QUICK_LOGIN: "false"
+        VITE_STAGING_DEMO_PASSWORD: ""
+        VITE_STAGING_PRESENTATION_RESET: "false"
+    container_name: gfrt-prod-web
+    restart: unless-stopped
+    networks: [gfrt_prod]
+    expose:
+      - "80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  gfrt_prod:
+    name: gfrt_prod
+
+volumes:
+  gfrt_pgdata:
+  gfrt_uploads:

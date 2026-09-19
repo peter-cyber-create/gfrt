@@ -18,7 +18,7 @@ if [[ ! -f "${ENV_FILE}" ]]; then
   APP_PASS="$(openssl rand -hex 24)"
   SESSION_SECRET="$(openssl rand -hex 32)"
   BACKUP_KEY="$(openssl rand -hex 32)"
-  # Lab login password — keep simple for local use (not production).
+  # Lab login password written only to gitignored .env — not used in production.
   SEED_PASS="demo1234"
 
   sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${PG_PASS}|" "${ENV_FILE}"
@@ -48,7 +48,7 @@ for i in $(seq 1 90); do
     if [[ -f "${ENV_FILE}" ]]; then
       # shellcheck disable=SC1090
       set -a; source "${ENV_FILE}"; set +a
-      echo "  Login:    admin@gfrt.local / ${STAGING_SEED_PASSWORD:-demo1234}"
+      echo "  Login:    admin@gfrt.local / ${STAGING_SEED_PASSWORD}"
     fi
     curl -s "http://127.0.0.1:8088/health" | head -c 200
     echo ""

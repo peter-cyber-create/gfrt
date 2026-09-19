@@ -10,7 +10,12 @@ const path = require("node:path");
 require("dotenv").config({ path: path.resolve(__dirname, "../infra/staging/.env"), quiet: true });
 
 const BASE = (process.env.STAGING_URL || "http://127.0.0.1:8088").replace(/\/$/, "");
-const PASSWORD = process.env.STAGING_SEED_PASSWORD || "demo1234";
+const PASSWORD = process.env.STAGING_SEED_PASSWORD || process.env.SMOKE_PASSWORD || "";
+
+if (!PASSWORD) {
+  console.error("STAGING_SEED_PASSWORD (or SMOKE_PASSWORD) must be set — load infra/staging/.env or export it.");
+  process.exit(2);
+}
 const OUT = path.resolve(__dirname, "../data/staging-functional-audit.json");
 
 if (BASE.includes("musooka.site")) {

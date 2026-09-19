@@ -15,7 +15,12 @@ if (STAGING_URL.startsWith("https://") && STAGING_URL.includes("127.0.0.1")) {
 const ADMIN_EMAIL = process.env.STAGING_ADMIN_EMAIL || "admin@gfrt.local";
 const REVIEWER_EMAIL = process.env.STAGING_REVIEWER_EMAIL || "reviewer@gfrt.local";
 const USER_EMAIL = process.env.STAGING_USER_EMAIL || "user@gfrt.local";
-const PASSWORD = process.env.STAGING_SEED_PASSWORD || process.env.SMOKE_PASSWORD || "demo1234";
+const PASSWORD = process.env.STAGING_SEED_PASSWORD || process.env.SMOKE_PASSWORD || "";
+
+if (!PASSWORD) {
+  console.error("STAGING_SEED_PASSWORD (or SMOKE_PASSWORD) must be set — load infra/staging/.env or export it.");
+  process.exit(2);
+}
 const OUT = path.resolve(__dirname, "../data/staging-e2e-results.json");
 
 const results = [];

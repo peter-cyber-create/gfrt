@@ -87,7 +87,7 @@ function main() {
     if (db.includes("musooka_dev") || db.includes("musooka_test") || db.includes("musooka_dev_only")) {
       fail("DATABASE_URL points at development/test database naming");
     } else if (db.includes("127.0.0.1") || db.includes("localhost")) {
-      warn("DATABASE_URL appears to use localhost — verify this is intentional for production");
+      fail("DATABASE_URL must not use localhost/127.0.0.1 in production");
     } else {
       ok("DATABASE_URL present (value redacted)");
     }

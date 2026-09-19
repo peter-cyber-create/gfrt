@@ -42,7 +42,8 @@
     "staging:multirole": "node scripts/staging-multirole.js",
     "staging:functional-audit": "node scripts/staging-functional-audit.js",
     "production:smoke": "node scripts/production-smoke.js",
-    "production:config-check": "node scripts/production-config-check.js"
+    "production:config-check": "node scripts/production-config-check.js",
+    "db:migrate:deploy": "npm --prefix backend run db:migrate"
   },
   "keywords": [],
   "author": "",

@@ -14,7 +14,7 @@ async function main() {
   }
 
   await seedPresentation(prisma, {
-    password: process.env.STAGING_SEED_PASSWORD || "demo1234",
+    password: process.env.STAGING_SEED_PASSWORD,
     requisitionCount: Number(process.env.STAGING_SEED_REQUISITIONS || 180),
   });
 }

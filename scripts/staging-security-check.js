@@ -13,7 +13,12 @@ if (STAGING_URL.includes("127.0.0.1")) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 const ADMIN_EMAIL = process.env.STAGING_ADMIN_EMAIL || "admin@gfrt.local";
-const PASSWORD = process.env.STAGING_SEED_PASSWORD || "demo1234";
+const PASSWORD = process.env.STAGING_SEED_PASSWORD || process.env.SMOKE_PASSWORD || "";
+
+if (!PASSWORD) {
+  console.error("STAGING_SEED_PASSWORD (or SMOKE_PASSWORD) must be set — load infra/staging/.env or export it.");
+  process.exit(2);
+}
 const OUT = path.resolve(__dirname, "../data/staging-security-check.json");
 const IS_HTTPS = STAGING_URL.startsWith("https://");
 
