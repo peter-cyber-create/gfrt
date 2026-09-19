@@ -7,13 +7,13 @@ const path = require("node:path");
 
 require("dotenv").config({ path: path.resolve(__dirname, "../infra/staging/.env"), quiet: true });
 
-const STAGING_URL = process.env.STAGING_URL || "https://127.0.0.1:8443";
-if (STAGING_URL.includes("127.0.0.1")) {
+const STAGING_URL = process.env.STAGING_URL || "http://127.0.0.1:8088";
+if (STAGING_URL.startsWith("https://") && STAGING_URL.includes("127.0.0.1")) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 const MAILPIT = process.env.MAILPIT_URL || "http://127.0.0.1:8025";
-const USER_EMAIL = process.env.STAGING_USER_EMAIL || "user@staging.musooka.local";
-const OLD_PASSWORD = process.env.STAGING_SEED_PASSWORD || "StagingOnly!Pass123";
+const USER_EMAIL = process.env.STAGING_USER_EMAIL || "user@gfrt.local";
+const OLD_PASSWORD = process.env.STAGING_SEED_PASSWORD || "demo1234";
 const NEW_PASSWORD = process.env.STAGING_NEW_PASSWORD || "ResetOk!NewPass456";
 const OUT = path.resolve(__dirname, "../data/staging-password-reset-e2e.json");
 

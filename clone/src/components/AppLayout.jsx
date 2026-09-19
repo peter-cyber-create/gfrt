@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { DEMO_MODE, navSections, pageTitles } from "../data/mock";
-import { notificationService } from "../services/index.js";
+import { getDataSource, notificationService } from "../services/index.js";
 import DemoBadge from "./DemoBadge";
 import Toast from "./Toast";
 
@@ -17,6 +17,7 @@ export default function AppLayout() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const headerRef = useRef(null);
+  const dataSource = getDataSource();
 
   const title = pageTitles[location.pathname] || "Application";
   const unread = notifications.filter((n) => n.unread).length;
@@ -61,7 +62,7 @@ export default function AppLayout() {
   }
 
   return (
-    <div className={`app-shell ${collapsed ? "sidebar-collapsed" : ""}`} data-data-source="mock">
+    <div className={`app-shell ${collapsed ? "sidebar-collapsed" : ""}`} data-data-source={dataSource}>
       <aside className={`app-sidebar ${mobileOpen ? "open" : ""}`} aria-label="Primary">
         <div className="sidebar-head">
           <Link to="/home" className="sidebar-brand-link" onClick={() => setMobileOpen(false)}>

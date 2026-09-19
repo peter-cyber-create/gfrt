@@ -39,7 +39,7 @@ export default function HomePage() {
     reportService
       .getDashboard()
       .then(setDash)
-      .catch(() => setError("Unable to load demonstration dashboard."));
+      .catch(() => setError("Unable to load dashboard."));
   }, []);
 
   if (error) {
@@ -56,7 +56,7 @@ export default function HomePage() {
   if (!dash) {
     return (
       <div>
-        <PageHeader title="Dashboard" subtitle="Loading demonstration data…" breadcrumb="Home / Dashboard" />
+        <PageHeader title="Dashboard" subtitle="Loading…" breadcrumb="Home / Dashboard" />
         <LoadingState label="Loading dashboard…" />
       </div>
     );
@@ -76,7 +76,7 @@ export default function HomePage() {
     <div data-testid="dashboard-page">
       <PageHeader
         title="Dashboard"
-        subtitle="Figures below are derived from local demonstration requisitions — not live production data."
+        subtitle="Live figures from staging requisitions."
         breadcrumb="Home / Dashboard"
       />
 
@@ -89,7 +89,7 @@ export default function HomePage() {
                   <div>
                     <div className="kpi-label">{kpi.label}</div>
                     <div className="kpi-value">{kpi.value}</div>
-                    <Trend trend={metrics.trends[kpi.key]} />
+                    <Trend trend={metrics.trends?.[kpi.key]} />
                   </div>
                   <i className={`${kpi.icon} kpi-icon text-${kpi.tone}`} aria-hidden="true" />
                 </div>

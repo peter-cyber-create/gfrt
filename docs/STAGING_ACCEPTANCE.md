@@ -18,7 +18,7 @@ Isolated controlled staging: **https://127.0.0.1:8443**
 - [x] API healthy via `https://127.0.0.1:8443/health`
 - [x] PostgreSQL ready via `/ready`
 - [x] Migrations on clean staging DB
-- [x] Staging seed accounts `@staging.musooka.local` only
+- [x] Staging seed accounts `@gfrt.local` only
 
 ## Authentication
 

@@ -125,6 +125,44 @@ export const mockRequisitionService = {
     return { ok: true, requisition: JSON.parse(JSON.stringify(row)) };
   },
 
+  async create(input, actor = "Demo User") {
+    await delay();
+    const id = `REQ-DEMO-${String(store.requisitions.length + 1).padStart(3, "0")}`;
+    const deptName =
+      typeof input.departmentId === "string" && input.departmentId.startsWith("mock-dept-")
+        ? (await import("../../data/config.js")).DEPARTMENTS[Number(input.departmentId.split("-").pop())] || "Laboratory"
+        : input.department || "Laboratory";
+    const row = {
+      id,
+      number: id,
+      facility: input.facility,
+      district: input.district,
+      department: deptName,
+      departmentId: input.departmentId,
+      statusCode: "DRAFT",
+      status: "Draft",
+      amount: `UGX ${(input.amountValue || 0).toLocaleString()}`,
+      amountValue: input.amountValue || 0,
+      description: input.description,
+      requester: actor,
+      submitted: "",
+      updated: new Date().toISOString().slice(0, 10),
+      requiredDate: input.requiredAt ? String(input.requiredAt).slice(0, 10) : "",
+      items: (input.items || []).map((it, i) => ({ ...it, id: `${id}-I${i + 1}` })),
+      history: [],
+      approvals: [],
+      comments: [],
+    };
+    store.requisitions.unshift(row);
+    pushAudit({
+      user: actor,
+      action: "requisition.create",
+      entity: "requisition",
+      entityId: id,
+    });
+    return JSON.parse(JSON.stringify(row));
+  },
+
   async confirmLocal(id, actor = "Demo User") {
     await delay();
     pushAudit({

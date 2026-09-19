@@ -7,17 +7,19 @@ import StatusBadge from "../components/StatusBadge";
 import StatusTimeline from "../components/StatusTimeline";
 import EmptyState from "../components/EmptyState";
 import LoadingState from "../components/LoadingState";
-import { DEPARTMENTS } from "../data/mock";
 import { STATUS_CODE_TO_LABEL } from "../data/config.js";
 import { useAuth } from "../auth/AuthContext";
 import { ALLOWED_TRANSITIONS } from "../domain/requisitionLifecycle.js";
-import { requisitionService } from "../services/index.js";
+import { departmentService, requisitionService } from "../services/index.js";
 
 export default function RequisitionsPage() {
   const { notify } = useOutletContext();
   const { user, can } = useAuth();
   const [rows, setRows] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [deptRecords, setDeptRecords] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All");
@@ -27,14 +29,44 @@ export default function RequisitionsPage() {
   const [sortDir, setSortDir] = useState("desc");
   const [selected, setSelected] = useState(null);
   const [note, setNote] = useState("");
+  const [createForm, setCreateForm] = useState({
+    facility: "",
+    district: "",
+    departmentId: "",
+    description: "",
+    amountValue: "",
+    itemDescription: "",
+    itemQuantity: "1",
+    itemUnit: "box",
+    itemUnitCost: "0",
+  });
+  const [creating, setCreating] = useState(false);
   const details = useLocalModal();
+  const createModal = useLocalModal();
   const pageSize = 6;
+
+  useEffect(() => {
+    departmentService
+      .list()
+      .then((list) => {
+        setDeptRecords(list);
+        setDepartments(list.map((d) => d.name));
+      })
+      .catch(() => {
+        setDeptRecords([]);
+        setDepartments([]);
+      });
+  }, []);
 
   async function refresh() {
     setLoading(true);
+    setError("");
     try {
       const list = await requisitionService.list({ query, status, department, dateFrom, sort, sortDir });
       setRows(list);
+    } catch (err) {
+      setRows([]);
+      setError(err.message || "Unable to load requisitions.");
     } finally {
       setLoading(false);
     }
@@ -52,6 +84,67 @@ export default function RequisitionsPage() {
     setSelected(full || row);
     setNote("");
     details.openModal();
+  }
+
+  function openCreate() {
+    setCreateForm({
+      facility: "",
+      district: "",
+      departmentId: deptRecords[0]?.id || "",
+      description: "",
+      amountValue: "",
+      itemDescription: "",
+      itemQuantity: "1",
+      itemUnit: "box",
+      itemUnitCost: "0",
+    });
+    createModal.openModal();
+  }
+
+  async function saveCreate(e) {
+    e.preventDefault();
+    if (!can("requisition.create")) {
+      notify("You do not have permission to create requisitions.", "danger");
+      return;
+    }
+    const qty = Number(createForm.itemQuantity);
+    const unitCost = Number(createForm.itemUnitCost);
+    const amountValue = Number(createForm.amountValue);
+    if (!createForm.facility || !createForm.district || !createForm.departmentId || !createForm.description) {
+      notify("Please fill all required fields.", "danger");
+      return;
+    }
+    if (!createForm.itemDescription || !Number.isFinite(qty) || qty < 1) {
+      notify("At least one line item with quantity is required.", "danger");
+      return;
+    }
+    setCreating(true);
+    try {
+      const created = await requisitionService.create({
+        facility: createForm.facility,
+        district: createForm.district,
+        departmentId: createForm.departmentId,
+        description: createForm.description,
+        amountValue: Number.isFinite(amountValue) ? Math.max(0, Math.round(amountValue)) : Math.max(0, Math.round(qty * (unitCost || 0))),
+        items: [
+          {
+            description: createForm.itemDescription,
+            quantity: Math.round(qty),
+            unit: createForm.itemUnit || "unit",
+            unitCost: Number.isFinite(unitCost) ? Math.max(0, Math.round(unitCost)) : 0,
+          },
+        ],
+      });
+      createModal.closeModal();
+      notify(`Requisition ${created?.number || "created"} saved as draft.`);
+      setPage(1);
+      await refresh();
+      if (created) openDetails(created);
+    } catch (err) {
+      notify(err.message || "Unable to create requisition.", "danger");
+    } finally {
+      setCreating(false);
+    }
   }
 
   function resetFilters() {
@@ -81,7 +174,7 @@ export default function RequisitionsPage() {
       return;
     }
     setSelected(result.requisition);
-    notify(`Local status updated to ${STATUS_CODE_TO_LABEL[toCode] || toCode}.`);
+    notify(`Status updated to ${STATUS_CODE_TO_LABEL[toCode] || toCode}.`);
     refresh();
   }
 
@@ -91,15 +184,10 @@ export default function RequisitionsPage() {
     <div data-testid="requisitions-page">
       <PageHeader
         title="Requisitions"
-        subtitle="Core operational module — local demo workflow (not production-verified)."
+        subtitle="Operational requisitions loaded from the staging API."
         breadcrumb="Operations / Requisitions"
         actions={
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            disabled={!can("requisition.create")}
-            onClick={() => notify("Create is disabled in presentation mode.", "info")}
-          >
+          <button type="button" className="btn btn-primary btn-sm" disabled={!can("requisition.create")} onClick={openCreate}>
             <i className="fas fa-plus mr-1" aria-hidden="true" /> New Requisition
           </button>
         }
@@ -137,12 +225,14 @@ export default function RequisitionsPage() {
                 }}
               >
                 <option>All</option>
+                <option>Draft</option>
                 <option>Submitted</option>
                 <option>Under Review</option>
                 <option>Processing</option>
                 <option>Approved</option>
                 <option>Completed</option>
                 <option>Rejected</option>
+                <option>Cancelled</option>
               </select>
             </div>
             <div className="form-group col-md-2 mb-2">
@@ -159,7 +249,7 @@ export default function RequisitionsPage() {
                 }}
               >
                 <option>All</option>
-                {DEPARTMENTS.map((d) => (
+                {departments.map((d) => (
                   <option key={d}>{d}</option>
                 ))}
               </select>
@@ -192,6 +282,12 @@ export default function RequisitionsPage() {
       <div className="card">
         {loading ? (
           <LoadingState label="Loading requisitions…" />
+        ) : error ? (
+          <div className="card-body">
+            <div className="alert alert-danger mb-0" role="alert">
+              {error}
+            </div>
+          </div>
         ) : (
           <>
             <div className="table-responsive">
@@ -224,7 +320,7 @@ export default function RequisitionsPage() {
                       <td colSpan={8}>
                         <EmptyState
                           title="No requisitions found"
-                          message="Adjust filters or reset to see demonstration records."
+                          message="Adjust filters or reset to see requisition records."
                           action={
                             <button type="button" className="btn btn-sm btn-outline-primary" onClick={resetFilters}>
                               Reset filters
@@ -387,10 +483,9 @@ export default function RequisitionsPage() {
             </div>
 
             <div className="border-top pt-3">
-              <div className="detail-section-title">Local workflow actions (demo)</div>
+              <div className="detail-section-title">Workflow actions</div>
               <p className="small text-muted">
-                Proposed lifecycle only — does not change production. Available next steps for{" "}
-                <code>{selected.statusCode}</code>:
+                Server-enforced lifecycle transitions for <code>{selected.statusCode}</code>:
               </p>
               <div className="form-group">
                 <label htmlFor="transitionNote" className="small">
@@ -426,6 +521,132 @@ export default function RequisitionsPage() {
             </div>
           </div>
         )}
+      </LocalModal>
+
+      <LocalModal
+        id="createRequisition"
+        title="New Requisition"
+        open={createModal.open}
+        onClose={createModal.closeModal}
+        footer={
+          <>
+            <button type="button" className="btn btn-secondary" onClick={createModal.closeModal}>
+              Cancel
+            </button>
+            <button type="submit" form="createRequisitionForm" className="btn btn-primary" disabled={creating}>
+              {creating ? "Saving…" : "Create draft"}
+            </button>
+          </>
+        }
+      >
+        <form id="createRequisitionForm" onSubmit={saveCreate}>
+          <div className="form-row">
+            <div className="form-group col-md-6">
+              <label htmlFor="crFacility">Facility</label>
+              <input
+                id="crFacility"
+                className="form-control"
+                value={createForm.facility}
+                onChange={(e) => setCreateForm({ ...createForm, facility: e.target.value })}
+                required
+              />
+            </div>
+            <div className="form-group col-md-6">
+              <label htmlFor="crDistrict">District</label>
+              <input
+                id="crDistrict"
+                className="form-control"
+                value={createForm.district}
+                onChange={(e) => setCreateForm({ ...createForm, district: e.target.value })}
+                required
+              />
+            </div>
+          </div>
+          <div className="form-group">
+            <label htmlFor="crDept">Department</label>
+            <select
+              id="crDept"
+              className="form-control"
+              value={createForm.departmentId}
+              onChange={(e) => setCreateForm({ ...createForm, departmentId: e.target.value })}
+              required
+            >
+              {deptRecords.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label htmlFor="crDesc">Description</label>
+            <textarea
+              id="crDesc"
+              className="form-control"
+              rows={2}
+              value={createForm.description}
+              onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="crAmount">Total amount (UGX)</label>
+            <input
+              id="crAmount"
+              type="number"
+              min="0"
+              className="form-control"
+              value={createForm.amountValue}
+              onChange={(e) => setCreateForm({ ...createForm, amountValue: e.target.value })}
+              placeholder="Optional — defaults to qty × unit cost"
+            />
+          </div>
+          <div className="detail-section-title">Line item</div>
+          <div className="form-row">
+            <div className="form-group col-md-6">
+              <label htmlFor="crItemDesc">Item description</label>
+              <input
+                id="crItemDesc"
+                className="form-control"
+                value={createForm.itemDescription}
+                onChange={(e) => setCreateForm({ ...createForm, itemDescription: e.target.value })}
+                required
+              />
+            </div>
+            <div className="form-group col-md-2">
+              <label htmlFor="crQty">Qty</label>
+              <input
+                id="crQty"
+                type="number"
+                min="1"
+                className="form-control"
+                value={createForm.itemQuantity}
+                onChange={(e) => setCreateForm({ ...createForm, itemQuantity: e.target.value })}
+                required
+              />
+            </div>
+            <div className="form-group col-md-2">
+              <label htmlFor="crUnit">Unit</label>
+              <input
+                id="crUnit"
+                className="form-control"
+                value={createForm.itemUnit}
+                onChange={(e) => setCreateForm({ ...createForm, itemUnit: e.target.value })}
+              />
+            </div>
+            <div className="form-group col-md-2">
+              <label htmlFor="crCost">Unit cost</label>
+              <input
+                id="crCost"
+                type="number"
+                min="0"
+                className="form-control"
+                value={createForm.itemUnitCost}
+                onChange={(e) => setCreateForm({ ...createForm, itemUnitCost: e.target.value })}
+              />
+            </div>
+          </div>
+        </form>
       </LocalModal>
     </div>
   );

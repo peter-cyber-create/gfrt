@@ -28,9 +28,9 @@
 
 | Role | Example identity (staging) |
 |------|----------------------------|
-| Administrator | `admin@staging.musooka.local` |
-| Reviewer | `reviewer@staging.musooka.local` |
-| Normal user | `user@staging.musooka.local` |
+| Administrator | `admin@gfrt.local` |
+| Reviewer | `reviewer@gfrt.local` |
+| Normal user | `user@gfrt.local` |
 
 Passwords are **not** included in this document. Obtain from the staging secret owner.
 

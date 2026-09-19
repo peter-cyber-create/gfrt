@@ -18,20 +18,28 @@ import {
 
 export const authRouter = Router();
 
-function setSessionCookie(res: import("express").Response, token: string, expiresAt: Date) {
+function cookieSecure(req: import("express").Request) {
+  if (env.COOKIE_SECURE) return true;
+  // Staging lab serves HTTP (:8088) and HTTPS (:8443) through the same API.
+  // Prefer Secure when the edge proxy reports HTTPS so HTTPS security checks pass.
+  const xf = String(req.get("x-forwarded-proto") || "").split(",")[0].trim().toLowerCase();
+  return req.secure || xf === "https";
+}
+
+function setSessionCookie(req: import("express").Request, res: import("express").Response, token: string, expiresAt: Date) {
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: env.COOKIE_SECURE,
+    secure: cookieSecure(req),
     sameSite: env.COOKIE_SAMESITE,
     expires: expiresAt,
     path: "/",
   });
 }
 
-function clearSessionCookie(res: import("express").Response) {
+function clearSessionCookie(req: import("express").Request, res: import("express").Response) {
   res.clearCookie(COOKIE_NAME, {
     httpOnly: true,
-    secure: env.COOKIE_SECURE,
+    secure: cookieSecure(req),
     sameSite: env.COOKIE_SAMESITE,
     path: "/",
   });
@@ -56,7 +64,7 @@ authRouter.post("/login", validateBody(loginSchema), async (req, res, next) => {
       userAgent: req.get("user-agent") || undefined,
       requestId: req.requestId,
     });
-    setSessionCookie(res, result.token, result.expiresAt);
+    setSessionCookie(req, res, result.token, result.expiresAt);
     res.json({ data: { user: publicUser(result.user), expiresAt: result.expiresAt } });
   } catch (err) {
     next(err);
@@ -66,7 +74,7 @@ authRouter.post("/login", validateBody(loginSchema), async (req, res, next) => {
 authRouter.post("/logout", async (req, res, next) => {
   try {
     await logout(readSessionToken(req), req.requestId);
-    clearSessionCookie(res);
+    clearSessionCookie(req, res);
     res.status(204).send();
   } catch (err) {
     next(err);

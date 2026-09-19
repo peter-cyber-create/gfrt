@@ -10,7 +10,7 @@ DATABASE_URL="${MIGRATE_URL}" npx prisma migrate deploy
 echo "[staging] Granting musooka_app privileges..."
 DATABASE_URL="${MIGRATE_URL}" npx tsx prisma/grant-app-user.staging.ts
 
-echo "[staging] Running seed.staging.ts..."
+echo "[staging] Running presentation seed (seed.staging.ts)..."
 DATABASE_URL="${MIGRATE_URL}" npx tsx prisma/seed.staging.ts
 
 echo "[staging] Starting API..."

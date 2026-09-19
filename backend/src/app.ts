@@ -20,12 +20,18 @@ import {
   usersRouter,
 } from "./routes/admin.js";
 import { attachmentsRouter } from "./routes/attachments.js";
+import { stagingRouter } from "./routes/staging.js";
 import { prisma } from "./lib/prisma.js";
 import { logger } from "./lib/logger.js";
 import { openApiDocument } from "./openapi.js";
 
 export function createApp() {
   const app = express();
+
+  // Staging/production sit behind Nginx; needed for express-rate-limit client IP.
+  if (env.NODE_ENV === "production" || env.NODE_ENV === "staging") {
+    app.set("trust proxy", 1);
+  }
 
   app.disable("x-powered-by");
   app.use(requestIdMiddleware);
@@ -95,6 +101,7 @@ export function createApp() {
   app.use("/api/v1/reports", reportsRouter);
   app.use("/api/v1/audit-logs", auditRouter);
   app.use("/api/v1/departments", departmentsRouter);
+  app.use("/api/v1/staging", stagingRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Route not found." } });

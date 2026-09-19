@@ -15,49 +15,81 @@ import { reportService } from "../services/index.js";
 
 export default function ReportsPage() {
   const { notify } = useOutletContext();
-  const { user, can } = useAuth();
+  const { can } = useAuth();
   const [category, setCategory] = useState("All");
   const [from, setFrom] = useState("2026-04-01");
   const [to, setTo] = useState("2026-09-14");
+  const [appliedRange, setAppliedRange] = useState({ from: "2026-04-01", to: "2026-09-14" });
   const [catalog, setCatalog] = useState([]);
   const [selected, setSelected] = useState(null);
   const [metrics, setMetrics] = useState(null);
   const [charts, setCharts] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    reportService.listCatalog(category).then((list) => {
-      setCatalog(list);
-      setSelected((prev) => list.find((r) => r.id === prev?.id) || list[0] || null);
-    });
+    reportService
+      .listCatalog(category)
+      .then((list) => {
+        setCatalog(list);
+        setSelected((prev) => list.find((r) => r.id === prev?.id) || list[0] || null);
+      })
+      .catch((err) => setError(err.message || "Unable to load report catalog."));
   }, [category]);
 
   useEffect(() => {
-    reportService.getDashboard().then((d) => {
-      setMetrics(d.metrics);
-      setCharts(d.charts);
-    });
-  }, []);
+    setLoading(true);
+    setError("");
+    reportService
+      .getAnalytics({ dateFrom: appliedRange.from, dateTo: appliedRange.to })
+      .then((d) => {
+        setMetrics(d.metrics);
+        setCharts({
+          byStatus: d.byStatus,
+          byDepartment: d.byDepartment,
+          overTime: d.overTime,
+        });
+      })
+      .catch((err) => {
+        setMetrics(null);
+        setCharts(null);
+        setError(err.message || "Unable to load report data.");
+      })
+      .finally(() => setLoading(false));
+  }, [appliedRange]);
 
   async function exportCsv() {
     if (!can("report.export")) {
       notify("Export requires report.export permission.", "info");
       return;
     }
-    const blob = await reportService.exportCsv(user?.name);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `gfrpt-demo-report-${Date.now()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    notify("Demo CSV exported locally.");
+    try {
+      const blob = await reportService.exportCsv({
+        dateFrom: appliedRange.from,
+        dateTo: appliedRange.to,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `gfrpt-report-${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      notify("CSV exported.");
+    } catch (err) {
+      notify(err.message || "Export failed.", "danger");
+    }
+  }
+
+  function applyRange() {
+    setAppliedRange({ from, to });
+    notify(`Preview refreshed for ${from} → ${to}.`);
   }
 
   return (
     <div>
       <PageHeader
         title="Reports"
-        subtitle="Generate and preview demonstration reports."
+        subtitle="Generate and preview reports from staging data."
         breadcrumb="Reporting / Reports"
         actions={
           <button type="button" className="btn btn-outline-primary btn-sm" id="exportReportBtn" onClick={exportCsv}>
@@ -93,13 +125,21 @@ export default function ReportsPage() {
               <input id="rptTo" type="date" className="form-control form-control-sm" value={to} onChange={(e) => setTo(e.target.value)} />
             </div>
             <div className="form-group col-md-3 mb-2">
-              <button type="button" className="btn btn-sm btn-primary" onClick={() => notify(`Preview refreshed for ${from} → ${to}.`)}>
+              <button type="button" className="btn btn-sm btn-primary" onClick={applyRange}>
                 Apply range
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      )}
+
+      {loading && !metrics && !error && <p className="text-muted small">Loading report metrics…</p>}
 
       {metrics && (
         <div className="row mb-3">

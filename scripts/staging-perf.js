@@ -10,8 +10,8 @@ require("dotenv").config({ path: path.resolve(__dirname, "../infra/staging/.env"
 
 const STAGING_URL = process.env.STAGING_URL || "https://127.0.0.1:8443";
 const tlsAgent = new https.Agent({ rejectUnauthorized: false });
-const ADMIN_EMAIL = process.env.STAGING_ADMIN_EMAIL || "admin@staging.musooka.local";
-const PASSWORD = process.env.STAGING_SEED_PASSWORD || "StagingOnly!Pass123";
+const ADMIN_EMAIL = process.env.STAGING_ADMIN_EMAIL || "admin@gfrt.local";
+const PASSWORD = process.env.STAGING_SEED_PASSWORD || "demo1234";
 const BASELINE_PATH = path.resolve(__dirname, "../data/perf-baseline.json");
 const OUT = path.resolve(__dirname, "../data/staging-perf.json");
 

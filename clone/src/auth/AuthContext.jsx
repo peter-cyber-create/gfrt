@@ -1,19 +1,53 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { authService } from "../services/index.js";
+import { authService, getDataSource } from "../services/index.js";
 import { hasAnyPermission, NAV_PERMISSIONS } from "../data/permissions.js";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => authService.getSession());
+  const [bootstrapping, setBootstrapping] = useState(() => getDataSource() === "api");
 
   useEffect(() => {
-    authService.persistSession(user);
-  }, [user]);
+    let cancelled = false;
+    async function bootstrap() {
+      if (getDataSource() !== "api") {
+        setBootstrapping(false);
+        return;
+      }
+      try {
+        const me = await authService.refresh();
+        if (!cancelled) setUser(me);
+      } catch {
+        if (!cancelled) {
+          authService.persistSession(null);
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) setBootstrapping(false);
+      }
+    }
+    bootstrap();
+
+    function onExpired() {
+      authService.persistSession(null);
+      setUser(null);
+    }
+    window.addEventListener("musooka:auth-expired", onExpired);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("musooka:auth-expired", onExpired);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!bootstrapping) authService.persistSession(user);
+  }, [user, bootstrapping]);
 
   const value = useMemo(
     () => ({
       user,
+      bootstrapping,
       isAuthenticated: !!user,
       permissions: user?.permissions || [],
       can(permissionId) {
@@ -33,7 +67,7 @@ export function AuthProvider({ children }) {
         setUser(null);
       },
     }),
-    [user]
+    [user, bootstrapping]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

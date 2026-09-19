@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { DEMO_MODE } from "../data/config.js";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+import { authService } from "../services/index.js";
 
 export default function PasswordResetConfirmPage() {
   const [searchParams] = useSearchParams();
@@ -37,20 +36,10 @@ export default function PasswordResetConfirmPage() {
 
     setBusy(true);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/auth/password-reset/confirm`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ token, password }),
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        setError(payload?.error?.message || "Reset failed.");
-        return;
-      }
+      await authService.confirmPasswordReset(token, password);
       setMessage("Password updated. You can sign in with your new password.");
-    } catch {
-      setError("Unable to reach the API.");
+    } catch (err) {
+      setError(err.message || "Unable to reach the API.");
     } finally {
       setBusy(false);
     }

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { DEMO_MODE } from "../data/config.js";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+import { authService } from "../services/index.js";
 
 export default function PasswordResetPage() {
   const [email, setEmail] = useState("");
@@ -26,20 +25,10 @@ export default function PasswordResetPage() {
     }
     setBusy(true);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/auth/password-reset/request`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        setError(payload?.error?.message || "Request failed.");
-        return;
-      }
+      await authService.requestPasswordReset(email);
       setMessage("If that email exists, a reset link has been sent.");
-    } catch {
-      setError("Unable to reach the API.");
+    } catch (err) {
+      setError(err.message || "Unable to reach the API.");
     } finally {
       setBusy(false);
     }

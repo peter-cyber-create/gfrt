@@ -17,6 +17,7 @@ import {
   apiReportService,
   apiNotificationService,
   apiAuditService,
+  apiDepartmentService,
 } from "./api/client.js";
 
 const useApi = !DEMO_MODE && DATA_SOURCE === "api";
@@ -28,6 +29,14 @@ export const roleService = useApi ? apiRoleService : mockRoleService;
 export const reportService = useApi ? apiReportService : mockReportService;
 export const notificationService = useApi ? apiNotificationService : mockNotificationService;
 export const auditService = useApi ? apiAuditService : mockAuditService;
+export const departmentService = useApi
+  ? apiDepartmentService
+  : {
+      async list() {
+        const { DEPARTMENTS } = await import("../data/config.js");
+        return DEPARTMENTS.map((name, i) => ({ id: `mock-dept-${i}`, name }));
+      },
+    };
 
 export function getDataSource() {
   return useApi ? "api" : "mock";

@@ -6,13 +6,13 @@ const fs = require("node:fs");
 const path = require("node:path");
 require("dotenv").config({ path: path.resolve(__dirname, "../infra/staging/.env"), quiet: true });
 
-const STAGING_URL = process.env.STAGING_URL || "https://127.0.0.1:8443";
-if (STAGING_URL.includes("127.0.0.1")) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+const STAGING_URL = process.env.STAGING_URL || "http://127.0.0.1:8088";
+if (STAGING_URL.startsWith("https://") && STAGING_URL.includes("127.0.0.1")) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-const ADMIN = process.env.STAGING_ADMIN_EMAIL || "admin@staging.musooka.local";
-const REVIEWER = process.env.STAGING_REVIEWER_EMAIL || "reviewer@staging.musooka.local";
-const USER = process.env.STAGING_USER_EMAIL || "user@staging.musooka.local";
-const PASSWORD = process.env.STAGING_SEED_PASSWORD || "StagingOnly!Pass123";
+const ADMIN = process.env.STAGING_ADMIN_EMAIL || "admin@gfrt.local";
+const REVIEWER = process.env.STAGING_REVIEWER_EMAIL || "reviewer@gfrt.local";
+const USER = process.env.STAGING_USER_EMAIL || "user@gfrt.local";
+const PASSWORD = process.env.STAGING_SEED_PASSWORD || "demo1234";
 const OUT = path.resolve(__dirname, "../data/staging-multirole.json");
 
 const results = [];
@@ -85,7 +85,7 @@ async function main() {
   record("user approve forbidden", denyApprove.status === 403, denyApprove.status);
 
   const denyUsers = await api(user.cookie, "POST", "/api/v1/users", {
-    email: "evil@staging.musooka.local",
+    email: "evil@gfrt.local",
     name: "Evil",
     password: "Password123!",
     roleId: "00000000-0000-0000-0000-000000000001",

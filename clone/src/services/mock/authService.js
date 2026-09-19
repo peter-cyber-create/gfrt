@@ -70,4 +70,12 @@ export const mockAuthService = {
     if (!permissionId) return true;
     return (user?.permissions || []).includes(permissionId);
   },
+
+  async requestPasswordReset() {
+    return { data: { ok: true } };
+  },
+
+  async confirmPasswordReset() {
+    return { data: { ok: true } };
+  },
 };

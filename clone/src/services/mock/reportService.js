@@ -47,22 +47,27 @@ export const mockReportService = {
     };
   },
 
-  async getAnalytics({ department = "All", status = "All" } = {}) {
+  async getAnalytics({ department = "All", status = "All", period, dateFrom, dateTo } = {}) {
     await delay();
+    void period;
     let rows = [...store.requisitions];
     if (department !== "All") rows = rows.filter((r) => r.department === department);
     if (status !== "All") rows = rows.filter((r) => r.status === status || r.statusCode === status);
+    if (dateFrom) rows = rows.filter((r) => (r.submitted || r.updated || "") >= dateFrom);
+    if (dateTo) rows = rows.filter((r) => (r.submitted || r.updated || "").slice(0, 10) <= dateTo);
     return {
       metrics: computeMetricsFromRequisitions(rows),
       byStatus: buildStatusDistribution(rows),
       byDepartment: buildDepartmentPerformance(rows),
       overTime: store.chartSeries.overTime,
       rows,
+      departments: [...new Set(store.requisitions.map((r) => r.department).filter(Boolean))],
     };
   },
 
-  async exportCsv(actor = "Demo User") {
+  async exportCsv(actorOrFilters = "Demo User") {
     await delay();
+    const actor = typeof actorOrFilters === "string" ? actorOrFilters : "Demo User";
     const header = "id,facility,district,department,status,statusCode,amount,submitted,requiredDate\n";
     const lines = store.requisitions
       .map((r) =>

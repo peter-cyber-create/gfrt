@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import LoadingState from "../components/LoadingState";
-import { APP_NAME, DEMO_MODE } from "../data/mock";
+import { APP_NAME, DEMO_MODE, STAGING_PRESENTATION_RESET } from "../data/mock";
 import { useAuth } from "../auth/AuthContext";
 import { auditService, getDataSource, reportService, resetDemoData } from "../services/index.js";
 
@@ -15,7 +15,8 @@ const TABS = [
 
 export default function SettingsPage() {
   const { notify } = useOutletContext();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [tab, setTab] = useState("profile");
   const [audits, setAudits] = useState([]);
   const [prefs, setPrefs] = useState(null);
@@ -34,13 +35,24 @@ export default function SettingsPage() {
   }
 
   async function handleReset() {
-    if (!DEMO_MODE) return;
+    if (!DEMO_MODE && !STAGING_PRESENTATION_RESET) return;
     setResetting(true);
-    await resetDemoData(user?.name);
-    setPrefs(await reportService.getPreferences());
-    setAudits(await auditService.list(12));
-    setResetting(false);
-    notify("Demo data restored to the initial presentation dataset.");
+    try {
+      await resetDemoData(user?.name);
+      if (STAGING_PRESENTATION_RESET && !DEMO_MODE) {
+        notify("Staging presentation data restored. Please sign in again.");
+        await logout();
+        navigate("/login");
+        return;
+      }
+      setPrefs(await reportService.getPreferences());
+      setAudits(await auditService.list(12));
+      notify("Demo data restored to the initial presentation dataset.");
+    } catch (err) {
+      notify(err?.message || "Reset failed.");
+    } finally {
+      setResetting(false);
+    }
   }
 
   return (
@@ -150,29 +162,31 @@ export default function SettingsPage() {
                   <dt className="col-sm-4">Name</dt>
                   <dd className="col-sm-8">{APP_NAME}</dd>
                   <dt className="col-sm-4">Environment</dt>
-                  <dd className="col-sm-8">{DEMO_MODE ? "Presentation / Demo" : "Standard"}</dd>
+                  <dd className="col-sm-8">{DEMO_MODE ? "Presentation / Demo" : STAGING_PRESENTATION_RESET ? "Staging presentation" : "Standard"}</dd>
                   <dt className="col-sm-4">Data source</dt>
                   <dd className="col-sm-8" data-testid="data-source">
                     {getDataSource()}
                   </dd>
                   <dt className="col-sm-4">Production API</dt>
-                  <dd className="col-sm-8 text-muted">Disabled</dd>
+                  <dd className="col-sm-8">{DEMO_MODE ? "Disabled (demo mode)" : "Staging API connected"}</dd>
                 </dl>
               </div>
             </div>
           </div>
           <div className="col-lg-6 mb-3">
             <div className="card h-100">
-              <div className="card-header">Demo controls</div>
+              <div className="card-header">{DEMO_MODE ? "Demo controls" : "Presentation controls"}</div>
               <div className="card-body">
                 <p className="text-muted small">
-                  Reset restores the initial presentation dataset. It does not affect production.
+                  {DEMO_MODE
+                    ? "Reset restores the initial presentation dataset. It does not affect production."
+                    : "Reset Demo Data restores the deterministic staging seed in PostgreSQL. It never touches musooka.site or production."}
                 </p>
                 <button
                   type="button"
                   className="btn btn-outline-warning btn-sm"
                   id="resetDemoBtn"
-                  disabled={!DEMO_MODE || resetting}
+                  disabled={(!DEMO_MODE && !STAGING_PRESENTATION_RESET) || resetting}
                   onClick={handleReset}
                 >
                   {resetting ? "Resetting…" : "Reset Demo Data"}
@@ -185,7 +199,7 @@ export default function SettingsPage() {
 
       {tab === "audit" && (
         <div className="card">
-          <div className="card-header">Recent audit events (demo)</div>
+          <div className="card-header">Recent audit events</div>
           <div className="table-responsive">
             <table className="table table-sm mb-0" id="auditTable">
               <thead>

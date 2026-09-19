@@ -113,6 +113,52 @@ export async function updateUserStatus(
   return user;
 }
 
+export async function updateUser(
+  actor: AuthUser,
+  id: string,
+  input: {
+    name?: string;
+    phone?: string | null;
+    departmentId?: string | null;
+    roleId?: string;
+  },
+  requestId?: string
+) {
+  requirePerm(actor, "user.manage");
+  const existing = await prisma.user.findUnique({ where: { id } });
+  if (!existing) throw new AppError("NOT_FOUND", "User not found.", 404);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id },
+      data: {
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.phone !== undefined ? { phone: input.phone } : {}),
+        ...(input.departmentId !== undefined ? { departmentId: input.departmentId } : {}),
+      },
+    });
+    if (input.roleId) {
+      await tx.userRole.deleteMany({ where: { userId: id } });
+      await tx.userRole.create({ data: { userId: id, roleId: input.roleId } });
+    }
+    await tx.auditLog.create({
+      data: {
+        actorId: actor.id,
+        action: "user.update",
+        entity: "user",
+        entityId: id,
+        requestId,
+        metadata: {
+          name: input.name,
+          departmentId: input.departmentId,
+          roleId: input.roleId,
+        },
+      },
+    });
+  });
+  return getUser(actor, id);
+}
+
 export async function listRoles(actor: AuthUser) {
   requirePerm(actor, "role.view");
   return prisma.role.findMany({

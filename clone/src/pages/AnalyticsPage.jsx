@@ -17,9 +17,8 @@ import {
 } from "recharts";
 import PageHeader from "../components/PageHeader";
 import LoadingState from "../components/LoadingState";
-import { DEPARTMENTS } from "../data/mock";
 import { useAuth } from "../auth/AuthContext";
-import { reportService } from "../services/index.js";
+import { departmentService, reportService } from "../services/index.js";
 
 const COLORS = ["#3490dc", "#6cb2eb", "#f6993f", "#38c172", "#343a40", "#e3342f"];
 
@@ -31,35 +30,59 @@ export default function AnalyticsPage() {
   const [period, setPeriod] = useState("2026-H2");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [departmentOptions, setDepartmentOptions] = useState([]);
+
+  useEffect(() => {
+    departmentService
+      .list()
+      .then((list) => setDepartmentOptions(list.map((d) => d.name)))
+      .catch((err) => {
+        setDepartmentOptions([]);
+        if (err?.status && err.status !== 403) setError(err.message || "Unable to load departments.");
+      });
+  }, []);
 
   useEffect(() => {
     setLoading(true);
+    setError("");
     reportService
-      .getAnalytics({ department, status })
-      .then(setData)
+      .getAnalytics({ department, status, period })
+      .then((next) => {
+        setData(next);
+        if (next?.departments?.length) setDepartmentOptions(next.departments);
+      })
+      .catch((err) => {
+        setData(null);
+        setError(err.message || "Unable to load analytics.");
+      })
       .finally(() => setLoading(false));
-  }, [department, status]);
+  }, [department, status, period]);
 
   async function exportCsv() {
     if (!can("report.export")) {
       notify("Export requires report.export permission.", "info");
       return;
     }
-    const blob = await reportService.exportCsv(user?.name);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `gfrpt-analytics-${Date.now()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    notify("Analytics CSV exported locally.");
+    try {
+      const blob = await reportService.exportCsv({ department, status, period });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `gfrpt-analytics-${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      notify("Analytics CSV exported.");
+    } catch (err) {
+      notify(err.message || "Export failed.", "danger");
+    }
   }
 
   return (
     <div data-testid="analytics-page">
       <PageHeader
         title="Analytics"
-        subtitle="Management view over demonstration data."
+        subtitle="Management view over staging requisition data."
         breadcrumb="Reporting / Analytics"
         actions={
           <button type="button" className="btn btn-outline-primary btn-sm" id="analyticsExportBtn" onClick={exportCsv}>
@@ -79,6 +102,7 @@ export default function AnalyticsPage() {
                 <option value="2026-H1">2026 H1</option>
                 <option value="2026-H2">2026 H2</option>
                 <option value="2026-Q3">2026 Q3</option>
+                <option value="2026-Q4">2026 Q4</option>
               </select>
             </div>
             <div className="form-group col-md-3 mb-2">
@@ -87,7 +111,7 @@ export default function AnalyticsPage() {
               </label>
               <select id="anDept" className="form-control form-control-sm" value={department} onChange={(e) => setDepartment(e.target.value)}>
                 <option>All</option>
-                {DEPARTMENTS.map((d) => (
+                {departmentOptions.map((d) => (
                   <option key={d}>{d}</option>
                 ))}
               </select>
@@ -110,7 +134,11 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {loading || !data ? (
+      {error ? (
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      ) : loading || !data ? (
         <LoadingState label="Loading analytics…" />
       ) : (
         <>

@@ -31,10 +31,20 @@ const envSchema = z
     /** Test-only: inject failure after status update in transitionRequisition */
     FORCE_TX_FAILURE: z.string().optional(),
     PASSWORD_RESET_URL_BASE: z.string().optional(),
+    /** Staging-only: allow POST /api/v1/staging/presentation-reset */
+    STAGING_ALLOW_PRESENTATION_RESET: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     const isProdLike = data.NODE_ENV === "production" || data.NODE_ENV === "staging";
     const isProduction = data.NODE_ENV === "production";
+
+    if (isProduction && data.STAGING_ALLOW_PRESENTATION_RESET === "true") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["STAGING_ALLOW_PRESENTATION_RESET"],
+        message: "STAGING_ALLOW_PRESENTATION_RESET is forbidden in production.",
+      });
+    }
 
     if (isProdLike) {
       if (data.SESSION_SECRET.length < 32) {

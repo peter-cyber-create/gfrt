@@ -67,7 +67,7 @@ export default function RolesPage() {
           <>
             <p>{selected.description}</p>
             <p className="small text-muted">
-              Assigned users (demo): <strong>{selected.users}</strong>
+              Assigned users: <strong>{selected.users}</strong>
             </p>
             <h6 className="mt-3">Permissions (proposed)</h6>
             <ul className="list-group list-group-flush">

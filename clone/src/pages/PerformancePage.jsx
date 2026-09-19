@@ -23,7 +23,7 @@ export default function PerformancePage() {
     reportService
       .getPerformance()
       .then(setData)
-      .catch(() => setError("Unable to load performance demonstration data."));
+      .catch(() => setError("Unable to load performance data."));
   }, []);
 
   if (error) {
@@ -50,7 +50,7 @@ export default function PerformancePage() {
     <div data-testid="performance-page">
       <PageHeader
         title="Performance"
-        subtitle="Indicators derived from local demonstration requisitions."
+        subtitle="Indicators derived from staging requisition data."
         breadcrumb="Operations / Performance"
       />
 

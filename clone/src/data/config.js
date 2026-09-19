@@ -8,6 +8,17 @@ export const DEMO_MODE = String(import.meta.env.VITE_DEMO_MODE ?? "true") !== "f
 /** Service backend selector. Demo always uses mock. */
 export const DATA_SOURCE = import.meta.env.VITE_DATA_SOURCE || (DEMO_MODE ? "mock" : "api");
 
+/** Staging presentation only — enables Admin/Reviewer/User Demo quick login (real API auth). */
+export const STAGING_QUICK_LOGIN =
+  !DEMO_MODE && String(import.meta.env.VITE_STAGING_QUICK_LOGIN || "") === "true";
+
+/** Password used only by staging quick-login buttons (never for production builds). */
+export const STAGING_DEMO_PASSWORD = String(import.meta.env.VITE_STAGING_DEMO_PASSWORD || "");
+
+/** Staging presentation reset control in Settings (API-backed). */
+export const STAGING_PRESENTATION_RESET =
+  !DEMO_MODE && String(import.meta.env.VITE_STAGING_PRESENTATION_RESET || "") === "true";
+
 export const DEPARTMENTS = [
   "HIV/AIDS",
   "TB/Leprosy",

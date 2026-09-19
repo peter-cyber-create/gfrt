@@ -48,9 +48,9 @@ Copy `infra/staging/.env.example` → `.env` or let `staging-up.sh` generate it.
 
 After first start (`seed.staging.ts`):
 
-- `admin@staging.musooka.local`
-- `reviewer@staging.musooka.local`
-- `user@staging.musooka.local`
+- `admin@gfrt.local`
+- `reviewer@gfrt.local`
+- `user@gfrt.local`
 
 Password: value of `STAGING_SEED_PASSWORD` in `.env`.
 

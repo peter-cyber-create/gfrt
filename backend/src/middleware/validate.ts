@@ -102,6 +102,13 @@ export const updateUserStatusSchema = z.object({
   status: z.enum(["ACTIVE", "INACTIVE", "DISABLED"]),
 });
 
+export const updateUserSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  phone: z.string().max(50).optional().nullable(),
+  departmentId: z.string().uuid().optional().nullable(),
+  roleId: z.string().uuid().optional(),
+});
+
 export const passwordResetRequestSchema = z.object({
   email: z.string().email().max(255),
 });

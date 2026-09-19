@@ -2,6 +2,7 @@ import { Router } from "express";
 import { requireAuth, requirePermission } from "../middleware/auth.js";
 import {
   createUserSchema,
+  updateUserSchema,
   updateUserStatusSchema,
   uuidParam,
   validateBody,
@@ -13,6 +14,7 @@ import {
   listPermissions,
   listRoles,
   listUsers,
+  updateUser,
   updateUserStatus,
 } from "../services/userService.js";
 import { listAuditLogs } from "../services/auditService.js";
@@ -59,6 +61,21 @@ usersRouter.post("/", requirePermission("user.manage"), validateBody(createUserS
     next(err);
   }
 });
+
+usersRouter.patch(
+  "/:id",
+  requirePermission("user.manage"),
+  validateParams(uuidParam),
+  validateBody(updateUserSchema),
+  async (req, res, next) => {
+    try {
+      const data = await updateUser(req.user!, String(req.params.id), req.body, req.requestId);
+      res.json({ data });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 usersRouter.patch(
   "/:id/status",
@@ -123,9 +140,33 @@ notificationsRouter.post("/:id/read", validateParams(uuidParam), async (req, res
 reportsRouter.get("/catalog", requirePermission("report.view"), async (_req, res) => {
   res.json({
     data: [
-      { id: "req-status", name: "Requisitions by status", proposed: true },
-      { id: "req-department", name: "Requisitions by department", proposed: true },
-      { id: "audit-recent", name: "Recent audit events", proposed: true },
+      {
+        id: "req-status",
+        title: "Requisitions by status",
+        name: "Requisitions by status",
+        category: "Operations",
+        description: "Status distribution across all requisitions",
+        updated: new Date().toISOString().slice(0, 10),
+        proposed: true,
+      },
+      {
+        id: "req-department",
+        title: "Requisitions by department",
+        name: "Requisitions by department",
+        category: "Performance",
+        description: "Department performance rates from live staging data",
+        updated: new Date().toISOString().slice(0, 10),
+        proposed: true,
+      },
+      {
+        id: "audit-recent",
+        title: "Recent audit events",
+        name: "Recent audit events",
+        category: "Administration",
+        description: "Latest audit log entries",
+        updated: new Date().toISOString().slice(0, 10),
+        proposed: true,
+      },
     ],
   });
 });

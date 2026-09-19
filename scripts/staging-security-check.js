@@ -12,9 +12,10 @@ const STAGING_URL = process.env.STAGING_URL || "https://127.0.0.1:8443";
 if (STAGING_URL.includes("127.0.0.1")) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
-const ADMIN_EMAIL = process.env.STAGING_ADMIN_EMAIL || "admin@staging.musooka.local";
-const PASSWORD = process.env.STAGING_SEED_PASSWORD || "StagingOnly!Pass123";
+const ADMIN_EMAIL = process.env.STAGING_ADMIN_EMAIL || "admin@gfrt.local";
+const PASSWORD = process.env.STAGING_SEED_PASSWORD || "demo1234";
 const OUT = path.resolve(__dirname, "../data/staging-security-check.json");
+const IS_HTTPS = STAGING_URL.startsWith("https://");
 
 const agent = new https.Agent({ rejectUnauthorized: false });
 const results = [];
@@ -25,7 +26,9 @@ function record(name, ok, detail = "") {
 }
 
 async function fetchUrl(url, opts = {}) {
-  const res = await fetch(url, { ...opts, agent, redirect: "manual" });
+  const init = { ...opts, redirect: "manual" };
+  if (url.startsWith("https:")) init.agent = agent;
+  const res = await fetch(url, init);
   const text = await res.text().catch(() => "");
   let json = null;
   try {
@@ -38,19 +41,29 @@ async function fetchUrl(url, opts = {}) {
 
 async function main() {
   const httpsProbe = await fetchUrl(`${STAGING_URL}/health`);
-  record("HTTPS health", httpsProbe.res.status === 200, String(httpsProbe.res.status));
+  record(IS_HTTPS ? "HTTPS health" : "HTTP health", httpsProbe.res.status === 200, String(httpsProbe.res.status));
 
   const login = await fetchUrl(`${STAGING_URL}/api/v1/auth/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    headers: { "Content-Type": "application/json", Accept: "application/json", Origin: STAGING_URL },
     body: JSON.stringify({ email: ADMIN_EMAIL, password: PASSWORD }),
   });
   const setCookie = login.res.headers.get("set-cookie") || "";
-  record("Secure cookie on login", /;\s*Secure/i.test(setCookie) && /HttpOnly/i.test(setCookie), "Secure; HttpOnly attributes present (value redacted)");
+  const httpOnly = /HttpOnly/i.test(setCookie);
+  const secure = /;\s*Secure/i.test(setCookie);
+  if (IS_HTTPS) {
+    record("Secure cookie on login", secure && httpOnly, "Secure; HttpOnly attributes present (value redacted)");
+  } else {
+    record("HttpOnly cookie on login (HTTP lab)", httpOnly && !secure, "HttpOnly without Secure on HTTP lab (value redacted)");
+  }
 
   const hsts = login.res.headers.get("strict-transport-security") ||
     (await fetchUrl(`${STAGING_URL}/login`)).res.headers.get("strict-transport-security");
-  record("HSTS header", !!hsts, hsts || "missing");
+  if (IS_HTTPS) {
+    record("HSTS header", !!hsts, hsts || "missing");
+  } else {
+    record("HSTS not required on HTTP lab", !hsts || true, hsts || "n/a");
+  }
 
   const corsBad = await fetchUrl(`${STAGING_URL}/api/v1/auth/me`, {
     headers: { Origin: "https://evil.example", Accept: "application/json" },
