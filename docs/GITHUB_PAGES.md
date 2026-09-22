@@ -31,6 +31,17 @@ Frontend → externally hosted API → PostgreSQL
 3. Ensure Actions are allowed for the repo
 4. Push to `main` (or run **Deploy GitHub Pages** via workflow_dispatch)
 
+### Plan / visibility requirement
+
+GitHub Pages for **private** repositories requires a paid plan that includes Pages.  
+If `POST /repos/.../pages` returns *“Your current plan does not support GitHub Pages for this repository”*:
+
+- make the repository **public**, or
+- upgrade the org/user plan that includes private Pages, or
+- publish the static demo from a dedicated public mirror repo (same `base` path rules)
+
+Until Pages is enabled, the workflow can still **build and validate** the static site; the **deploy** job will not publish a live URL.
+
 ## Local build matching Pages
 
 ```bash
