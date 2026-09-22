@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { APP_NAME, DEMO_MODE, STAGING_DEMO_PASSWORD, STAGING_QUICK_LOGIN } from "../data/mock";
 import DemoBadge from "../components/DemoBadge";
+import { assetUrl } from "../lib/assetUrl.js";
 
 const DEMO_ACCOUNTS = [
   { id: "admin", label: "Admin Demo", email: "admin@gfrt.local" },
@@ -74,7 +75,7 @@ export default function LoginPage() {
               <div className="card-header">Login</div>
               <div className="card-body">
                 <div className="text-center mb-4">
-                  <img src="/img/coa2.png" alt="Coat of Arms of Uganda" />
+                  <img src={assetUrl("img/coa2.png")} alt="Coat of Arms of Uganda" />
                   <br />
                   <span>{APP_NAME}</span>
                 </div>

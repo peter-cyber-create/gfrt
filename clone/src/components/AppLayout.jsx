@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { DEMO_MODE, navSections, pageTitles } from "../data/mock";
+import { assetUrl } from "../lib/assetUrl.js";
 import { getDataSource, notificationService } from "../services/index.js";
 import DemoBadge from "./DemoBadge";
 import Toast from "./Toast";
@@ -66,7 +67,7 @@ export default function AppLayout() {
       <aside className={`app-sidebar ${mobileOpen ? "open" : ""}`} aria-label="Primary">
         <div className="sidebar-head">
           <Link to="/home" className="sidebar-brand-link" onClick={() => setMobileOpen(false)}>
-            <img src="/img/coa2.png" alt="" height="32" />
+            <img src={assetUrl("img/coa2.png")} alt="" height="32" />
             {!collapsed && (
               <div className="sidebar-brand-text">
                 <strong>GFRPT</strong>

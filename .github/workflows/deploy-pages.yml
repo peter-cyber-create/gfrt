@@ -1,0 +1,113 @@
+name: Deploy GitHub Pages
+
+# Static demo frontend only — does NOT deploy Express, Prisma, or PostgreSQL.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clone
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            clone/package-lock.json
+
+      - name: Install root tooling (Playwright validate)
+        working-directory: .
+        run: npm ci
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Production demo build for GitHub Pages
+        env:
+          GITHUB_PAGES: "true"
+          VITE_BASE_PATH: /moh-gfrt/
+          VITE_DEMO_MODE: "true"
+          VITE_DATA_SOURCE: mock
+          VITE_STAGING_QUICK_LOGIN: "false"
+          VITE_STAGING_PRESENTATION_RESET: "false"
+          # Never bake API/DB secrets into the static site.
+          VITE_API_BASE_URL: ""
+        run: npm run build
+
+      - name: SPA fallback for GitHub Pages deep links
+        working-directory: .
+        run: bash scripts/pages-spa-fallback.sh
+
+      - name: Assert base path and demo safety in bundle
+        run: |
+          js=$(ls dist/assets/index-*.js | head -1)
+          html=dist/index.html
+          if ! grep -q '/moh-gfrt/' "$html"; then
+            echo "Expected /moh-gfrt/ base references in index.html" >&2
+            exit 1
+          fi
+          if grep -E '127\.0\.0\.1:4000|localhost:4000' "$js"; then
+            echo "Forbidden localhost API base in Pages bundle" >&2
+            exit 1
+          fi
+          echo "Pages bundle checks passed ($js)"
+
+      - name: Preview built site and run Playwright validate
+        working-directory: .
+        env:
+          CLONE_URL: http://127.0.0.1:4173/moh-gfrt
+        run: |
+          npx playwright install --with-deps chromium
+          (
+            cd clone
+            GITHUB_PAGES=true VITE_BASE_PATH=/moh-gfrt/ npx vite preview --host 127.0.0.1 --port 4173 --strictPort
+          ) &
+          preview_pid=$!
+          trap 'kill $preview_pid 2>/dev/null || true' EXIT
+          for i in $(seq 1 40); do
+            if curl -sf "http://127.0.0.1:4173/moh-gfrt/" >/dev/null; then
+              break
+            fi
+            sleep 1
+            if [[ "$i" -eq 40 ]]; then
+              echo "Preview server did not become ready" >&2
+              exit 1
+            fi
+          done
+          # Deep-link / refresh check (404.html SPA fallback)
+          code=$(curl -s -o /tmp/pages-deep.html -w "%{http_code}" "http://127.0.0.1:4173/moh-gfrt/requisitions")
+          # vite preview returns 200 with SPA middleware; also require 404.html present for real Pages
+          test -f clone/dist/404.html
+          npm run validate
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: clone/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
