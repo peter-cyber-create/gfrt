@@ -26,8 +26,8 @@ export default function PasswordResetPage() {
       if (DEMO_MODE) {
         setMessage(
           path
-            ? "Reset link created for this demonstration. No email is sent."
-            : "If that account exists, a reset link would be issued. No email is sent in demo mode."
+            ? "Reset link created. No email is sent in this environment."
+            : "If that account exists, a reset link would be issued. No email is sent in this environment."
         );
         if (path) setDemoPath(path);
       } else {

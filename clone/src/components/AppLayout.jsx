@@ -4,7 +4,6 @@ import { useAuth } from "../auth/AuthContext";
 import { DEMO_MODE, navSections, pageSubtitles, pageTitles } from "../data/mock";
 import { assetUrl } from "../lib/assetUrl.js";
 import { getDataSource, notificationService } from "../services/index.js";
-import DemoBadge from "./DemoBadge";
 import Toast from "./Toast";
 
 export default function AppLayout() {
@@ -44,6 +43,23 @@ export default function AppLayout() {
   }, [location.pathname]);
 
   useEffect(() => {
+    document.body.classList.toggle("drawer-open", mobileOpen);
+    return () => document.body.classList.remove("drawer-open");
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        setUserOpen(false);
+        setNotifOpen(false);
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
     function onDocClick(e) {
       if (headerRef.current && !headerRef.current.contains(e.target)) {
         setUserOpen(false);
@@ -64,8 +80,12 @@ export default function AppLayout() {
   }
 
   return (
-    <div className={`app-shell ${collapsed ? "sidebar-collapsed" : ""}`} data-data-source={dataSource}>
-      <aside className={`app-sidebar ${mobileOpen ? "open" : ""}`} aria-label="Primary">
+    <div
+      className={`app-shell ${collapsed ? "sidebar-collapsed" : ""}`}
+      data-data-source={dataSource}
+      data-demo-mode={DEMO_MODE ? "true" : "false"}
+    >
+      <aside className={`app-sidebar ${mobileOpen ? "open" : ""}`} aria-label="Primary" id="app-sidebar">
         <div className="sidebar-head">
           <Link to="/home" className="sidebar-brand-link" onClick={() => setMobileOpen(false)}>
             <img src={assetUrl("img/coa2.png")} alt="" height="28" />
@@ -137,6 +157,8 @@ export default function AppLayout() {
               type="button"
               className="btn btn-link d-md-none mr-1"
               aria-label="Toggle navigation"
+              aria-expanded={mobileOpen}
+              aria-controls="app-sidebar"
               onClick={() => setMobileOpen((v) => !v)}
             >
               <i className="fas fa-bars" />
@@ -153,7 +175,6 @@ export default function AppLayout() {
           </div>
 
           <div className="topnav-right">
-            <DemoBadge />
             <div className={`dropdown ${notifOpen ? "show" : ""}`}>
               <button
                 type="button"
@@ -229,18 +250,13 @@ export default function AppLayout() {
         </header>
 
         <main className="app-content">
-          {DEMO_MODE && (
-            <div className="demo-banner" role="note">
-              Demonstration data — not live production figures.
-            </div>
-          )}
-          <Outlet context={{ notify }} />
+          <div className="app-content-inner">
+            <Outlet context={{ notify }} />
+          </div>
         </main>
       </div>
 
-      {toast && (
-        <Toast message={toast.message} variant={toast.variant} onClose={() => setToast(null)} />
-      )}
+      {toast && <Toast message={toast.message} variant={toast.variant} onClose={() => setToast(null)} />}
     </div>
   );
 }

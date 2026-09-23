@@ -183,7 +183,7 @@ export default function RequisitionsPage() {
   async function applyTransition(toCode) {
     if (!selected) return;
     const result = await requisitionService.transition(selected.id, toCode, {
-      actor: user?.name || "Demo User",
+      actor: user?.name || user?.email || "System",
       note,
     });
     if (!result.ok) {
@@ -208,7 +208,7 @@ export default function RequisitionsPage() {
         }
       />
 
-      <div className="card mb-3">
+      <div className="card mb-3 filter-bar">
         <div className="card-body py-3">
           <div className="form-row align-items-end">
             <div className="form-group col-md-3 mb-2">
@@ -305,15 +305,15 @@ export default function RequisitionsPage() {
           </div>
         ) : (
           <>
-            <div className="table-responsive">
-              <table className="table table-hover mb-0" id="requisitionsTable">
+            <div className="table-scroll">
+              <table className="table table-hover table-mobile-cards mb-0" id="requisitionsTable">
                 <thead>
                   <tr>
                     <th scope="col" className="sortable-th" onClick={() => toggleSort("id")}>
                       Reference {sort === "id" ? (sortDir === "asc" ? "↑" : "↓") : ""}
                     </th>
                     <th scope="col">Department</th>
-                    <th scope="col">Requester</th>
+                    <th scope="col" className="col-hide-mobile">Requester</th>
                     <th scope="col" className="sortable-th" onClick={() => toggleSort("amountValue")}>
                       Amount
                     </th>
@@ -344,15 +344,21 @@ export default function RequisitionsPage() {
                   ) : (
                     pageRows.map((row) => (
                       <tr key={row.id} data-status-code={row.statusCode}>
-                        <td className="small font-monospace">{row.id}</td>
-                        <td>{row.department}</td>
-                        <td>{row.requester}</td>
-                        <td>{row.amount}</td>
-                        <td>
+                        <td className="small font-monospace" data-label="Reference">
+                          {row.number || row.id}
+                        </td>
+                        <td data-label="Department">{row.department}</td>
+                        <td className="col-hide-mobile" data-label="Requester">
+                          {row.requester}
+                        </td>
+                        <td data-label="Amount">{row.amount}</td>
+                        <td data-label="Status">
                           <StatusBadge status={row.status} statusCode={row.statusCode} />
                         </td>
-                        <td className="meta-text">{row.updated}</td>
-                        <td className="text-nowrap">
+                        <td className="meta-text" data-label="Updated">
+                          {row.updated}
+                        </td>
+                        <td className="text-nowrap" data-label="Action">
                           <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => openDetails(row)}>
                             View
                           </button>

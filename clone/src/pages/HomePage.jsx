@@ -74,12 +74,12 @@ export default function HomePage() {
         <div className="col-lg-8 mb-3">
           <div className="panel">
             <div className="panel-header">Recent requisitions</div>
-            <DataTable>
+            <DataTable mobileCards>
               <thead>
                 <tr>
                   <th scope="col">Reference</th>
                   <th scope="col">Department</th>
-                  <th scope="col">Requester</th>
+                  <th scope="col" className="col-hide-mobile">Requester</th>
                   <th scope="col">Amount</th>
                   <th scope="col">Status</th>
                   <th scope="col">Updated</th>
@@ -88,14 +88,20 @@ export default function HomePage() {
               <tbody>
                 {recentRequisitions.map((row) => (
                   <tr key={row.id}>
-                    <td className="font-monospace small">{row.number || row.id}</td>
-                    <td>{row.department}</td>
-                    <td>{row.requester}</td>
-                    <td>{row.amount}</td>
-                    <td>
+                    <td className="font-monospace small" data-label="Reference">
+                      {row.number || row.id}
+                    </td>
+                    <td data-label="Department">{row.department}</td>
+                    <td className="col-hide-mobile" data-label="Requester">
+                      {row.requester}
+                    </td>
+                    <td data-label="Amount">{row.amount}</td>
+                    <td data-label="Status">
                       <StatusBadge status={row.status} statusCode={row.statusCode} />
                     </td>
-                    <td className="meta-text">{row.updated}</td>
+                    <td className="meta-text" data-label="Updated">
+                      {row.updated}
+                    </td>
                   </tr>
                 ))}
               </tbody>

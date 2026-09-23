@@ -88,14 +88,14 @@ export default function SettingsPage() {
     try {
       await resetDemoData(user?.name);
       if (STAGING_PRESENTATION_RESET && !DEMO_MODE) {
-        notify("Staging presentation data restored. Please sign in again.");
+        notify("Staging data restored. Please sign in again.");
         await logout();
         navigate("/login");
         return;
       }
       setPrefs(await reportService.getPreferences());
       setAudits(await auditService.list(12));
-      notify("Demo data restored.");
+      notify("Data restored.");
     } catch (err) {
       notify(err?.message || "Reset failed.");
     } finally {
@@ -136,7 +136,7 @@ export default function SettingsPage() {
               <dd className="col-sm-9">{user?.role}</dd>
               <dt className="col-sm-3">Data source</dt>
               <dd className="col-sm-9" data-testid="data-source">
-                {getDataSource()}
+                {getDataSource() === "api" ? "API" : "Local"}
               </dd>
               <dt className="col-sm-3">Permissions</dt>
               <dd className="col-sm-9">{(user?.permissions || []).length} granted</dd>
@@ -268,20 +268,20 @@ export default function SettingsPage() {
                   <dt className="col-sm-4">Name</dt>
                   <dd className="col-sm-8">{APP_NAME}</dd>
                   <dt className="col-sm-4">Environment</dt>
-                  <dd className="col-sm-8">{DEMO_MODE ? "Demo" : STAGING_PRESENTATION_RESET ? "Staging" : "Standard"}</dd>
+                  <dd className="col-sm-8">{DEMO_MODE ? "Local" : STAGING_PRESENTATION_RESET ? "Staging" : "Standard"}</dd>
                   <dt className="col-sm-4">Data source</dt>
                   <dd className="col-sm-8" data-testid="data-source">
-                    {getDataSource()}
+                    {getDataSource() === "api" ? "API" : "Local"}
                   </dd>
                 </dl>
               </div>
             </div>
             {(DEMO_MODE || STAGING_PRESENTATION_RESET) && (
               <div className="card">
-                <div className="card-header">Reset demo data</div>
+                <div className="card-header">Reset application data</div>
                 <div className="card-body">
                   <p className="text-muted small mb-3">
-                    Restores the initial presentation dataset{DEMO_MODE ? " and passwords" : ""}. Does not affect production.
+                    Restores the initial dataset{DEMO_MODE ? " and local passwords" : ""}. Does not affect live systems.
                   </p>
                   <button
                     type="button"
@@ -290,7 +290,7 @@ export default function SettingsPage() {
                     disabled={resetting}
                     onClick={handleReset}
                   >
-                    {resetting ? "Resetting…" : "Reset demo data"}
+                    {resetting ? "Resetting…" : "Reset application data"}
                   </button>
                 </div>
               </div>

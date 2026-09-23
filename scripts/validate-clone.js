@@ -67,7 +67,7 @@ async function login(page) {
     else fail("sidebar present");
     if (await page.locator(".app-topnav").count()) ok("top navigation present");
     else fail("top navigation present");
-    if (await page.locator(".demo-banner, .demo-badge").count()) ok("presentation indicator");
+    if (await page.locator('[data-demo-mode="true"], [data-data-source="mock"]').count()) ok("presentation indicator");
     else fail("presentation indicator");
 
     // Navigation routes
@@ -251,8 +251,9 @@ async function login(page) {
     // Service abstraction: settings shows mock data source; shell marks mock
     await page.goto(CLONE_URL + "/settings", { waitUntil: "networkidle" });
     const dataSource = await page.locator('[data-testid="data-source"]').innerText().catch(() => "");
-    if (dataSource.trim() === "mock") ok("service abstraction (mock source)");
-    else fail("service abstraction (mock source)", dataSource);
+    const shellSource = await page.locator("[data-data-source]").getAttribute("data-data-source").catch(() => "");
+    if (dataSource.trim() === "Local" || dataSource.trim() === "mock" || shellSource === "mock") ok("service abstraction (mock source)");
+    else fail("service abstraction (mock source)", `${dataSource}/${shellSource}`);
     await page.click('button.nav-link:has-text("Audit")');
     await page.waitForTimeout(200);
     if (await page.locator("#auditTable").count()) ok("audit log model visible");

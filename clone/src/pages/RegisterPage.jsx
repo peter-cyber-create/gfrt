@@ -34,7 +34,7 @@ export default function RegisterPage() {
       setError("Password confirmation does not match.");
       return;
     }
-    setMessage("Registration saved locally for presentation only. No account was created on the live server.");
+    setMessage("Registration saved locally. No account was created on a remote server.");
   }
 
   return (

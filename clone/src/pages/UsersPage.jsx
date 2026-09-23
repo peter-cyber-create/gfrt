@@ -195,16 +195,16 @@ export default function UsersPage() {
       </div>
 
       <div className="card">
-        <div className="table-responsive">
-          <table className="table table-striped mb-0" id="usersTable">
+        <div className="table-scroll">
+          <table className="table table-striped table-mobile-cards mb-0" id="usersTable">
             <thead>
               <tr>
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
-                <th>Department</th>
+                <th className="col-hide-mobile">Department</th>
                 <th>Status</th>
-                <th>Last activity</th>
+                <th className="col-hide-mobile">Last activity</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -218,15 +218,19 @@ export default function UsersPage() {
               ) : (
                 pageRows.map((u) => (
                   <tr key={u.id}>
-                    <td>{u.name}</td>
-                    <td>{u.email}</td>
-                    <td>{u.role}</td>
-                    <td>{u.department}</td>
-                    <td>
+                    <td data-label="Name">{u.name}</td>
+                    <td data-label="Email">{u.email}</td>
+                    <td data-label="Role">{u.role}</td>
+                    <td className="col-hide-mobile" data-label="Department">
+                      {u.department}
+                    </td>
+                    <td data-label="Status">
                       <StatusBadge status={u.status} />
                     </td>
-                    <td className="small">{u.lastActivity}</td>
-                    <td className="text-right text-nowrap">
+                    <td className="small col-hide-mobile" data-label="Last activity">
+                      {u.lastActivity}
+                    </td>
+                    <td className="text-right text-nowrap" data-label="Actions">
                       <button
                         type="button"
                         className="btn btn-sm btn-outline-secondary mr-1"

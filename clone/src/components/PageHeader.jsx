@@ -6,7 +6,7 @@ export default function PageHeader({ title, subtitle, actions, breadcrumb }) {
         <h4 className="page-title mb-0">{title}</h4>
         {subtitle && <p className="text-muted small mb-0 mt-1">{subtitle}</p>}
       </div>
-      {actions && <div className="page-actions mt-2 mt-md-0 d-flex flex-wrap">{actions}</div>}
+      {actions && <div className="page-header-actions page-actions mt-2 mt-md-0 d-flex flex-wrap">{actions}</div>}
     </div>
   );
 }

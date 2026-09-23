@@ -220,7 +220,7 @@ export const reportCatalog = [
   { id: "RPT-01", title: "Monthly Performance Summary", category: "Performance", description: "Completion rates, turnaround, and backlog by programme.", updated: "2026-09-01" },
   { id: "RPT-02", title: "Requisitions by District", category: "Operations", description: "Volume and status distribution across districts.", updated: "2026-09-10" },
   { id: "RPT-03", title: "Approval Turnaround", category: "Performance", description: "Average days from submission to approval.", updated: "2026-09-08" },
-  { id: "RPT-04", title: "User Activity Audit", category: "Administration", description: "Demo audit of local user actions (presentation only).", updated: "2026-09-12" },
+  { id: "RPT-04", title: "User Activity Audit", category: "Administration", description: "Recent user actions from the audit log.", updated: "2026-09-12" },
 ];
 
 /** Sidebar navigation — flat list (no category headings) */

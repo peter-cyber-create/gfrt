@@ -161,7 +161,7 @@ export default function RequisitionFormFields({ form, setForm, departments, form
         </button>
       </div>
 
-      <div className="table-responsive mb-2">
+      <div className="table-responsive mb-2 line-items-desktop">
         <table className="table table-sm" data-testid="line-items-table">
           <thead>
             <tr>
@@ -241,6 +241,77 @@ export default function RequisitionFormFields({ form, setForm, departments, form
             </tr>
           </tfoot>
         </table>
+      </div>
+
+      <div className="line-items-mobile mb-2" data-testid="line-items-mobile">
+        {form.items.map((item, index) => (
+          <div className="line-item-card" key={index}>
+            <div className="form-group">
+              <label>Description</label>
+              <input
+                className="form-control"
+                aria-label={`Item ${index + 1} description`}
+                value={item.description}
+                onChange={(e) => updateItem(index, { description: e.target.value })}
+                required
+              />
+            </div>
+            <div className="form-row">
+              <div className="form-group col-6">
+                <label>Quantity</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="form-control"
+                  aria-label={`Item ${index + 1} quantity`}
+                  value={item.quantity}
+                  onChange={(e) => updateItem(index, { quantity: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group col-6">
+                <label>Unit</label>
+                <input
+                  className="form-control"
+                  aria-label={`Item ${index + 1} unit`}
+                  value={item.unit}
+                  onChange={(e) => updateItem(index, { unit: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Unit cost</label>
+              <input
+                type="number"
+                min="0"
+                className="form-control"
+                aria-label={`Item ${index + 1} unit cost`}
+                value={item.unitCost}
+                onChange={(e) => updateItem(index, { unitCost: e.target.value })}
+              />
+            </div>
+            <div className="d-flex justify-content-between align-items-center">
+              <strong className="small">
+                {formatUgx(lineTotalUgx({ quantity: Number(item.quantity), unitCost: Number(item.unitCost) }))}
+              </strong>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-danger"
+                disabled={form.items.length <= 1}
+                onClick={() => removeItem(index)}
+                aria-label={`Remove item ${index + 1}`}
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ))}
+        <div className="d-flex justify-content-between border-top pt-2">
+          <span className="font-weight-bold">Total</span>
+          <span className="font-weight-bold" data-testid="requisition-form-total-mobile">
+            {formatUgx(total)}
+          </span>
+        </div>
       </div>
       <p className="small text-muted mb-0">Totals are recalculated on the server from quantity × unit cost (UGX).</p>
     </div>
