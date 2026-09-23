@@ -66,6 +66,12 @@ export function AuthProvider({ children }) {
         await authService.logout(user);
         setUser(null);
       },
+      async changePassword(currentPassword, newPassword, confirmPassword) {
+        if (typeof authService.changePassword !== "function") {
+          return { ok: false, message: "Change password is not available in this mode." };
+        }
+        return authService.changePassword(user, currentPassword, newPassword, confirmPassword);
+      },
     }),
     [user, bootstrapping]
   );

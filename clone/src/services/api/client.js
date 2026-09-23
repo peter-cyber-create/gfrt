@@ -160,6 +160,24 @@ export const apiAuthService = {
   async confirmPasswordReset(token, password) {
     return confirmPasswordReset(token, password);
   },
+
+  /**
+   * Logged-in password change is not exposed by the current API.
+   * Use the password-reset endpoints when signed out.
+   */
+  async changePassword() {
+    return {
+      ok: false,
+      message: "Change password while signed in is available in demo mode. Use Reset password when connected to the API.",
+    };
+  },
+
+  async adminResetPassword() {
+    return {
+      ok: false,
+      message: "Admin password reset is available in demo mode only.",
+    };
+  },
 };
 
 function mapRequisition(row) {

@@ -89,11 +89,9 @@ export default function ReportsPage() {
     <div>
       <PageHeader
         title="Reports"
-        subtitle="Report catalogue."
-        breadcrumb="Reporting / Reports"
         actions={
-          <button type="button" className="btn btn-outline-primary btn-sm" id="exportReportBtn" onClick={exportCsv}>
-            <i className="fas fa-download mr-1" /> Export CSV
+          <button type="button" className="btn btn-outline-secondary btn-sm" id="exportReportBtn" onClick={exportCsv}>
+            Export CSV
           </button>
         }
       />

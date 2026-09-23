@@ -313,11 +313,149 @@ async function login(page) {
     await page.waitForTimeout(200);
     if (await page.locator("#density").count()) {
       await page.selectOption("#density", "compact");
-      await page.click('button:has-text("Save preferences")');
+      await page.click('button:has-text("Save changes")');
       await page.waitForTimeout(300);
       ok("settings preferences save");
     } else fail("settings preferences save");
 
+    await page.click('button.nav-link:has-text("Security")');
+    await page.waitForTimeout(200);
+    if (await page.locator("[data-testid=change-password-form]").count()) ok("change password form visible");
+    else fail("change password form visible");
+
+    // Password change validation — wrong current password
+    await page.fill("#currentPassword", "wrong-current");
+    await page.fill("#newPassword", "NewPass123!");
+    await page.fill("#confirmPassword", "NewPass123!");
+    await page.click("[data-testid=change-password-submit]");
+    await page.waitForTimeout(400);
+    const cpErr = await page.locator("[data-testid=change-password-error]").innerText().catch(() => "");
+    if (/incorrect|unable/i.test(cpErr)) ok("password change rejects bad current");
+    else fail("password change rejects bad current", cpErr);
+
+    // Password change mismatch
+    await page.fill("#currentPassword", PASSWORD);
+    await page.fill("#newPassword", "NewPass123!");
+    await page.fill("#confirmPassword", "Mismatch123!");
+    await page.click("[data-testid=change-password-submit]");
+    await page.waitForTimeout(300);
+    const mismatch = await page.locator("[data-testid=change-password-error]").innerText().catch(() => "");
+    if (/do not match/i.test(mismatch)) ok("password change rejects mismatch");
+    else fail("password change rejects mismatch", mismatch);
+
+    // Successful change (legacy demo credentials)
+    await page.fill("#currentPassword", PASSWORD);
+    await page.fill("#newPassword", "ChangedPass123!");
+    await page.fill("#confirmPassword", "ChangedPass123!");
+    await page.click("[data-testid=change-password-submit]");
+    await page.waitForTimeout(500);
+    if (await page.locator("[data-testid=change-password-success]").count()) ok("password change success");
+    else fail("password change success");
+
+    // Old password no longer works; new password does
+    await page.click("#userMenu");
+    await page.click('button.dropdown-item:has-text("Logout")');
+    await page.waitForURL("**/login");
+    await page.fill("#email", EMAIL);
+    await page.fill("#password", PASSWORD);
+    await page.click('button[type="submit"]');
+    await page.waitForTimeout(600);
+    if (await page.locator(".alert-danger").count()) ok("old password rejected after change");
+    else fail("old password rejected after change");
+    await page.fill("#email", EMAIL);
+    await page.fill("#password", "ChangedPass123!");
+    await page.click('button[type="submit"]');
+    await page.waitForURL("**/home", { timeout: 10000 });
+    ok("login with new password");
+
+    // Forgot-password flow (demo local)
+    await page.click("#userMenu");
+    await page.click('button.dropdown-item:has-text("Logout")');
+    await page.waitForURL("**/login");
+    await page.goto(CLONE_URL + "/password/reset", { waitUntil: "networkidle" });
+    await page.fill("#email", "admin");
+    await page.click("[data-testid=reset-request-submit]");
+    await page.waitForTimeout(400);
+    if (await page.locator("[data-testid=demo-reset-link]").count()) ok("demo password reset link issued");
+    else fail("demo password reset link issued");
+    await page.click("[data-testid=demo-reset-link]");
+    await page.waitForURL("**/password/reset/confirm**");
+    await page.fill("#password", "ResetPass123!");
+    await page.fill("#confirm", "ResetPass123!");
+    await page.click("[data-testid=reset-confirm-submit]");
+    await page.waitForTimeout(500);
+    if (await page.locator("[data-testid=reset-confirm-message]").count()) ok("demo password reset confirm");
+    else fail("demo password reset confirm");
+    await page.goto(CLONE_URL + "/login", { waitUntil: "networkidle" });
+    await page.fill("#email", "admin");
+    await page.fill("#password", "Admin123!");
+    await page.click('button[type="submit"]');
+    await page.waitForTimeout(600);
+    if (await page.locator(".alert-danger").count()) ok("previous password rejected after reset");
+    else fail("previous password rejected after reset");
+    await page.fill("#email", "admin");
+    await page.fill("#password", "ResetPass123!");
+    await page.click('button[type="submit"]');
+    await page.waitForURL("**/home", { timeout: 10000 });
+    ok("login after password reset");
+
+    // Restore passwords/data before remaining RBAC checks
+    await page.goto(CLONE_URL + "/settings", { waitUntil: "networkidle" });
+    await page.click('button.nav-link:has-text("Security")');
+    await page.waitForTimeout(200);
+    await page.click("#resetDemoBtn");
+    await page.waitForTimeout(600);
+    ok("reset demo data after password tests");
+
+    // Sidebar flat (no category headings) + role visibility
+    await page.goto(CLONE_URL + "/home", { waitUntil: "networkidle" });
+    const flatNav = await page.locator("[data-testid=sidebar-nav]").innerText();
+    if (!/Overview|Operations|Reporting|Management|System/.test(flatNav) && flatNav.includes("Dashboard")) {
+      ok("sidebar has no category headings");
+    } else fail("sidebar has no category headings", flatNav.slice(0, 160));
+
+    // Reviewer RBAC sidebar
+    await page.click("#userMenu");
+    await page.click('button.dropdown-item:has-text("Logout")');
+    await page.waitForURL("**/login");
+    await page.click("#demo-login-reviewer");
+    await page.waitForURL("**/home", { timeout: 10000 });
+    const reviewerNav = await page.locator("[data-testid=sidebar-nav]").innerText();
+    if (!reviewerNav.includes("Users") && !reviewerNav.includes("Roles") && reviewerNav.includes("Requisitions")) {
+      ok("sidebar visibility by role (reviewer)");
+    } else fail("sidebar visibility by role (reviewer)", reviewerNav.slice(0, 160));
+
+    // User RBAC sidebar
+    await page.click("#userMenu");
+    await page.click('button.dropdown-item:has-text("Logout")');
+    await page.waitForURL("**/login");
+    await page.click("#demo-login-user");
+    await page.waitForURL("**/home", { timeout: 10000 });
+    const userNav = await page.locator("[data-testid=sidebar-nav]").innerText();
+    if (!userNav.includes("Users") && !userNav.includes("Roles") && userNav.includes("Dashboard")) {
+      ok("sidebar visibility by role (user)");
+    } else fail("sidebar visibility by role (user)", userNav.slice(0, 160));
+
+    // Back to admin for admin reset + final checks
+    await page.click("#userMenu");
+    await page.click('button.dropdown-item:has-text("Logout")');
+    await page.waitForURL("**/login");
+    await login(page);
+
+    // Admin password reset for presentation account
+    await page.goto(CLONE_URL + "/users", { waitUntil: "networkidle" });
+    await page.fill("#userSearch", "Amina");
+    await page.waitForTimeout(200);
+    await page.locator('button:has-text("View")').first().click();
+    await page.waitForTimeout(200);
+    if (await page.locator("[data-testid=admin-reset-password]").count()) {
+      await page.click("[data-testid=admin-reset-password]");
+      await page.waitForTimeout(400);
+      ok("admin user password reset");
+    } else fail("admin user password reset");
+    await page.locator(".modal .close").first().click().catch(() => {});
+
+    await page.goto(CLONE_URL + "/settings", { waitUntil: "networkidle" });
     await page.click('button.nav-link:has-text("Security")');
     await page.waitForTimeout(200);
     await page.click("#resetDemoBtn");

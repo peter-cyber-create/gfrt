@@ -89,6 +89,12 @@ export const mockReportService = {
   async resetDemo(actor = "Demo Admin") {
     await delay();
     resetDemoData();
+    try {
+      const { resetDemoPasswords } = await import("./authService.js");
+      resetDemoPasswords();
+    } catch {
+      /* ignore */
+    }
     pushAudit({
       user: actor,
       action: "demo.reset",

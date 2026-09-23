@@ -13,14 +13,24 @@ const TABS = [
   { id: "audit", label: "Audit" },
 ];
 
+const emptyPasswordForm = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+};
+
 export default function SettingsPage() {
   const { notify } = useOutletContext();
-  const { user, logout } = useAuth();
+  const { user, logout, changePassword } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState("profile");
   const [audits, setAudits] = useState([]);
   const [prefs, setPrefs] = useState(null);
   const [resetting, setResetting] = useState(false);
+  const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
     reportService.getPreferences().then(setPrefs);
@@ -31,7 +41,41 @@ export default function SettingsPage() {
     e.preventDefault();
     const next = await reportService.savePreferences(prefs, user?.name);
     setPrefs(next);
-    notify("Preferences saved locally.");
+    notify("Preferences saved.");
+  }
+
+  async function handleChangePassword(e) {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordMessage("");
+    const { currentPassword, newPassword, confirmPassword } = passwordForm;
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError("All password fields are required.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordError("Password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match.");
+      return;
+    }
+    setPasswordBusy(true);
+    try {
+      const result = await changePassword(currentPassword, newPassword, confirmPassword);
+      if (!result?.ok) {
+        setPasswordError(result?.message || "Unable to change password.");
+        return;
+      }
+      setPasswordForm(emptyPasswordForm);
+      setPasswordMessage(result.message || "Password updated.");
+      notify("Password updated.");
+    } catch (err) {
+      setPasswordError(err?.message || "Unable to change password.");
+    } finally {
+      setPasswordBusy(false);
+    }
   }
 
   async function handleReset() {
@@ -47,7 +91,7 @@ export default function SettingsPage() {
       }
       setPrefs(await reportService.getPreferences());
       setAudits(await auditService.list(12));
-      notify("Demo data restored to the initial presentation dataset.");
+      notify("Demo data restored.");
     } catch (err) {
       notify(err?.message || "Reset failed.");
     } finally {
@@ -57,7 +101,7 @@ export default function SettingsPage() {
 
   return (
     <div data-testid="settings-page">
-      <PageHeader title="Settings" subtitle="Preferences and audit." breadcrumb="System / Settings" />
+      <PageHeader title="Settings" />
 
       <ul className="nav nav-tabs settings-tabs mb-3" role="tablist">
         {TABS.map((t) => (
@@ -91,9 +135,7 @@ export default function SettingsPage() {
                 {getDataSource()}
               </dd>
               <dt className="col-sm-3">Permissions</dt>
-              <dd className="col-sm-9">
-                <span className="badge badge-light border">{(user?.permissions || []).length} granted</span>
-              </dd>
+              <dd className="col-sm-9">{(user?.permissions || []).length} granted</dd>
             </dl>
           </div>
         </div>
@@ -101,7 +143,7 @@ export default function SettingsPage() {
 
       {tab === "preferences" && (
         <div className="card">
-          <div className="card-header">Appearance & notifications</div>
+          <div className="card-header">Preferences</div>
           <div className="card-body">
             {!prefs ? (
               <LoadingState />
@@ -128,7 +170,7 @@ export default function SettingsPage() {
                     onChange={(e) => setPrefs({ ...prefs, emailDigest: e.target.checked })}
                   />
                   <label className="form-check-label" htmlFor="emailDigest">
-                    Email digest (local preference only)
+                    Email digest
                   </label>
                 </div>
                 <div className="form-check mb-3">
@@ -144,7 +186,7 @@ export default function SettingsPage() {
                   </label>
                 </div>
                 <button type="submit" className="btn btn-primary btn-sm">
-                  Save preferences
+                  Save changes
                 </button>
               </form>
             )}
@@ -156,50 +198,106 @@ export default function SettingsPage() {
         <div className="row">
           <div className="col-lg-6 mb-3">
             <div className="card h-100">
+              <div className="card-header">Change password</div>
+              <div className="card-body">
+                {passwordError && (
+                  <div className="alert alert-danger py-2" data-testid="change-password-error">
+                    {passwordError}
+                  </div>
+                )}
+                {passwordMessage && (
+                  <div className="alert alert-success py-2" data-testid="change-password-success">
+                    {passwordMessage}
+                  </div>
+                )}
+                <form onSubmit={handleChangePassword} data-testid="change-password-form" autoComplete="off">
+                  <div className="form-group">
+                    <label htmlFor="currentPassword">Current password</label>
+                    <input
+                      id="currentPassword"
+                      type="password"
+                      className="form-control"
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                      autoComplete="current-password"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="newPassword">New password</label>
+                    <input
+                      id="newPassword"
+                      type="password"
+                      className="form-control"
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                      autoComplete="new-password"
+                      minLength={8}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="confirmPassword">Confirm new password</label>
+                    <input
+                      id="confirmPassword"
+                      type="password"
+                      className="form-control"
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                      autoComplete="new-password"
+                      minLength={8}
+                      required
+                    />
+                  </div>
+                  <button type="submit" className="btn btn-primary btn-sm" disabled={passwordBusy} data-testid="change-password-submit">
+                    {passwordBusy ? "Saving…" : "Change password"}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+          <div className="col-lg-6 mb-3">
+            <div className="card mb-3">
               <div className="card-header">Application</div>
               <div className="card-body">
                 <dl className="row mb-0">
                   <dt className="col-sm-4">Name</dt>
                   <dd className="col-sm-8">{APP_NAME}</dd>
                   <dt className="col-sm-4">Environment</dt>
-                  <dd className="col-sm-8">{DEMO_MODE ? "Presentation / Demo" : STAGING_PRESENTATION_RESET ? "Staging presentation" : "Standard"}</dd>
+                  <dd className="col-sm-8">{DEMO_MODE ? "Demo" : STAGING_PRESENTATION_RESET ? "Staging" : "Standard"}</dd>
                   <dt className="col-sm-4">Data source</dt>
                   <dd className="col-sm-8" data-testid="data-source">
                     {getDataSource()}
                   </dd>
-                  <dt className="col-sm-4">Production API</dt>
-                  <dd className="col-sm-8">{DEMO_MODE ? "Disabled (demo mode)" : "Staging API connected"}</dd>
                 </dl>
               </div>
             </div>
-          </div>
-          <div className="col-lg-6 mb-3">
-            <div className="card h-100">
-              <div className="card-header">{DEMO_MODE ? "Demo controls" : "Presentation controls"}</div>
-              <div className="card-body">
-                <p className="text-muted small">
-                  {DEMO_MODE
-                    ? "Reset restores the initial presentation dataset. It does not affect production."
-                    : "Reset Demo Data restores the deterministic staging seed in PostgreSQL. It never touches musooka.site or production."}
-                </p>
-                <button
-                  type="button"
-                  className="btn btn-outline-warning btn-sm"
-                  id="resetDemoBtn"
-                  disabled={(!DEMO_MODE && !STAGING_PRESENTATION_RESET) || resetting}
-                  onClick={handleReset}
-                >
-                  {resetting ? "Resetting…" : "Reset Demo Data"}
-                </button>
+            {(DEMO_MODE || STAGING_PRESENTATION_RESET) && (
+              <div className="card">
+                <div className="card-header">Reset demo data</div>
+                <div className="card-body">
+                  <p className="text-muted small mb-3">
+                    Restores the initial presentation dataset{DEMO_MODE ? " and passwords" : ""}. Does not affect production.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary btn-sm"
+                    id="resetDemoBtn"
+                    disabled={resetting}
+                    onClick={handleReset}
+                  >
+                    {resetting ? "Resetting…" : "Reset demo data"}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
 
       {tab === "audit" && (
         <div className="card">
-          <div className="card-header">Recent audit events</div>
+          <div className="card-header">Audit</div>
           <div className="table-responsive">
             <table className="table table-sm mb-0" id="auditTable">
               <thead>

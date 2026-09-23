@@ -184,11 +184,9 @@ export default function RequisitionsPage() {
     <div data-testid="requisitions-page">
       <PageHeader
         title="Requisitions"
-        subtitle="Requisition register."
-        breadcrumb="Operations / Requisitions"
         actions={
           <button type="button" className="btn btn-primary btn-sm" disabled={!can("requisition.create")} onClick={openCreate}>
-            <i className="fas fa-plus mr-1" aria-hidden="true" /> New Requisition
+            New requisition
           </button>
         }
       />

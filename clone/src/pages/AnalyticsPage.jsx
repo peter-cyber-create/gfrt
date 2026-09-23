@@ -82,11 +82,9 @@ export default function AnalyticsPage() {
     <div data-testid="analytics-page">
       <PageHeader
         title="Analytics"
-        subtitle="Filtered operational analytics."
-        breadcrumb="Reporting / Analytics"
         actions={
-          <button type="button" className="btn btn-outline-primary btn-sm" id="analyticsExportBtn" onClick={exportCsv}>
-            <i className="fas fa-download mr-1" aria-hidden="true" /> Export
+          <button type="button" className="btn btn-outline-secondary btn-sm" id="analyticsExportBtn" onClick={exportCsv}>
+            Export
           </button>
         }
       />

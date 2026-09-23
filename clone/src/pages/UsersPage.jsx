@@ -7,7 +7,7 @@ import StatusBadge from "../components/StatusBadge";
 import EmptyState from "../components/EmptyState";
 import { DEMO_MODE } from "../data/mock";
 import { useAuth } from "../auth/AuthContext";
-import { departmentService, roleService, userService } from "../services/index.js";
+import { authService, departmentService, roleService, userService } from "../services/index.js";
 
 const emptyForm = { name: "", email: "", password: "", roleId: "", departmentId: "" };
 
@@ -107,15 +107,32 @@ export default function UsersPage() {
     }
   }
 
+  async function adminResetPassword(u) {
+    if (!can("user.manage")) return;
+    if (typeof authService.adminResetPassword !== "function") {
+      notify("Admin password reset is not available.", "danger");
+      return;
+    }
+    const temporary = "TempPass123!";
+    try {
+      const result = await authService.adminResetPassword(u, temporary, currentUser?.name);
+      if (!result?.ok) {
+        notify(result?.message || "Unable to reset password.", "danger");
+        return;
+      }
+      notify(result.message || "Password reset.");
+    } catch (err) {
+      notify(err.message || "Unable to reset password.", "danger");
+    }
+  }
+
   return (
     <div>
       <PageHeader
         title="Users"
-        subtitle="User administration."
-        breadcrumb="Management / Users"
         actions={
           <button type="button" className="btn btn-primary btn-sm" onClick={openAdd} disabled={!can("user.manage")}>
-            <i className="fas fa-user-plus mr-1" /> Add User
+            Add user
           </button>
         }
       />
@@ -182,7 +199,7 @@ export default function UsersPage() {
                 <th>Department</th>
                 <th>Status</th>
                 <th>Last activity</th>
-                <th />
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -314,7 +331,29 @@ export default function UsersPage() {
         </form>
       </LocalModal>
 
-      <LocalModal id="viewUser" title="User details" open={viewModal.open} onClose={viewModal.closeModal} footer={<button type="button" className="btn btn-secondary" onClick={viewModal.closeModal}>Close</button>}>
+      <LocalModal
+        id="viewUser"
+        title="User details"
+        open={viewModal.open}
+        onClose={viewModal.closeModal}
+        footer={
+          <>
+            {can("user.manage") && selected && (
+              <button
+                type="button"
+                className="btn btn-outline-secondary mr-2"
+                data-testid="admin-reset-password"
+                onClick={() => adminResetPassword(selected)}
+              >
+                Reset password
+              </button>
+            )}
+            <button type="button" className="btn btn-secondary" onClick={viewModal.closeModal}>
+              Close
+            </button>
+          </>
+        }
+      >
         {selected && (
           <dl className="row mb-0">
             <dt className="col-sm-4">Name</dt>

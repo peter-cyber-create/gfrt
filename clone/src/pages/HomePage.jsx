@@ -62,7 +62,7 @@ export default function HomePage() {
 
   return (
     <div data-testid="dashboard-page">
-      <PageHeader title="Dashboard" subtitle="Requisition operations overview." />
+      <PageHeader title="Dashboard" />
 
       <div className="metric-row">
         {kpis.map((kpi) => (

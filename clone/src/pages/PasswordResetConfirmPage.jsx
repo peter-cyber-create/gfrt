@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { DEMO_MODE } from "../data/config.js";
 import { authService } from "../services/index.js";
 
 export default function PasswordResetConfirmPage() {
@@ -29,17 +28,15 @@ export default function PasswordResetConfirmPage() {
       setError("Passwords do not match.");
       return;
     }
-    if (DEMO_MODE) {
-      setMessage("In demo mode, password reset is not sent to the API.");
-      return;
-    }
 
     setBusy(true);
     try {
-      await authService.confirmPasswordReset(token, password);
+      await authService.confirmPasswordReset(token, password, confirm);
+      setPassword("");
+      setConfirm("");
       setMessage("Password updated. You can sign in with your new password.");
     } catch (err) {
-      setError(err.message || "Unable to reach the API.");
+      setError(err.message || "Unable to update password.");
     } finally {
       setBusy(false);
     }
@@ -51,14 +48,22 @@ export default function PasswordResetConfirmPage() {
         <div className="row justify-content-center">
           <div className="col-md-8">
             <div className="card">
-              <div className="card-header">Confirm Password Reset</div>
+              <div className="card-header">Set new password</div>
               <div className="card-body">
-                {error && <div className="alert alert-danger">{error}</div>}
-                {message && <div className="alert alert-success">{message}</div>}
-                <form method="post" action="#" onSubmit={onSubmit}>
+                {error && (
+                  <div className="alert alert-danger" data-testid="reset-confirm-error">
+                    {error}
+                  </div>
+                )}
+                {message && (
+                  <div className="alert alert-success" data-testid="reset-confirm-message">
+                    {message}
+                  </div>
+                )}
+                <form method="post" action="#" onSubmit={onSubmit} data-testid="reset-confirm-form">
                   <div className="form-group row">
                     <label htmlFor="password" className="col-md-4 col-form-label text-md-right">
-                      New Password
+                      New password
                     </label>
                     <div className="col-md-6">
                       <input
@@ -76,7 +81,7 @@ export default function PasswordResetConfirmPage() {
                   </div>
                   <div className="form-group row">
                     <label htmlFor="confirm" className="col-md-4 col-form-label text-md-right">
-                      Confirm Password
+                      Confirm password
                     </label>
                     <div className="col-md-6">
                       <input
@@ -93,11 +98,11 @@ export default function PasswordResetConfirmPage() {
                   </div>
                   <div className="form-group row mb-0">
                     <div className="col-md-6 offset-md-4">
-                      <button type="submit" className="btn btn-primary" disabled={busy}>
-                        Update Password
+                      <button type="submit" className="btn btn-primary" disabled={busy} data-testid="reset-confirm-submit">
+                        {busy ? "Updating…" : "Update password"}
                       </button>
                       <Link to="/login" className="btn btn-link">
-                        Back to Login
+                        Back to login
                       </Link>
                     </div>
                   </div>

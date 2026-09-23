@@ -29,7 +29,7 @@ export default function PerformancePage() {
   if (error) {
     return (
       <div>
-        <PageHeader title="Performance" breadcrumb="Operations / Performance" />
+        <PageHeader title="Performance" />
         <div className="alert alert-danger">{error}</div>
       </div>
     );
@@ -38,7 +38,7 @@ export default function PerformancePage() {
   if (!data) {
     return (
       <div>
-        <PageHeader title="Performance" breadcrumb="Operations / Performance" />
+        <PageHeader title="Performance" />
         <LoadingState />
       </div>
     );
@@ -48,11 +48,7 @@ export default function PerformancePage() {
 
   return (
     <div data-testid="performance-page">
-      <PageHeader
-        title="Performance"
-        subtitle="Requisition status."
-        breadcrumb="Operations / Performance"
-      />
+      <PageHeader title="Performance" />
 
       <div className="row mb-3">
         <div className="col-md-3 mb-2">

@@ -223,41 +223,21 @@ export const reportCatalog = [
   { id: "RPT-04", title: "User Activity Audit", category: "Administration", description: "Demo audit of local user actions (presentation only).", updated: "2026-09-12" },
 ];
 
-/** Sidebar navigation — sectioned enterprise shell */
+/** Sidebar navigation — flat list (no category headings) */
 export const navSections = [
   {
-    id: "overview",
-    label: "Overview",
-    items: [{ path: "/home", label: "Dashboard", icon: "fas fa-th-large" }],
-  },
-  {
-    id: "operations",
-    label: "Operations",
+    id: "main",
+    label: null,
     items: [
+      { path: "/home", label: "Dashboard", icon: "fas fa-th-large" },
       { path: "/requisitions", label: "Requisitions", icon: "fas fa-file-alt" },
       { path: "/performance", label: "Performance", icon: "fas fa-chart-line" },
-    ],
-  },
-  {
-    id: "reporting",
-    label: "Reporting",
-    items: [
       { path: "/analytics", label: "Analytics", icon: "fas fa-chart-pie" },
       { path: "/reports", label: "Reports", icon: "fas fa-chart-bar" },
-    ],
-  },
-  {
-    id: "management",
-    label: "Management",
-    items: [
       { path: "/users", label: "Users", icon: "fas fa-users" },
       { path: "/roles", label: "Roles", icon: "fas fa-user-shield" },
+      { path: "/settings", label: "Settings", icon: "fas fa-cog" },
     ],
-  },
-  {
-    id: "system",
-    label: "System",
-    items: [{ path: "/settings", label: "Settings", icon: "fas fa-cog" }],
   },
 ];
 
@@ -273,14 +253,14 @@ export const pageTitles = {
 };
 
 export const pageSubtitles = {
-  "/home": "Requisition operations overview.",
-  "/requisitions": "Requisition register.",
-  "/performance": "Requisition status.",
-  "/users": "User administration.",
-  "/roles": "Roles and permissions.",
-  "/reports": "Report catalogue.",
-  "/analytics": "Filtered operational analytics.",
-  "/settings": "Preferences and audit.",
+  "/home": "",
+  "/requisitions": "",
+  "/performance": "",
+  "/users": "",
+  "/roles": "",
+  "/reports": "",
+  "/analytics": "",
+  "/settings": "",
 };
 
 /** Back-compat exports used by older imports */
