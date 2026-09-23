@@ -208,14 +208,15 @@ async function login(page) {
     else ok("reports export interaction"); // download may not show toast wait enough
 
     // Sidebar collapse
-    await page.goto(CLONE_URL + "/home");
-    const collapseBtn = page.locator('.sidebar-foot button');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(CLONE_URL + "/home", { waitUntil: "domcontentloaded" });
+    const collapseBtn = page.locator('button[aria-label="Collapse sidebar"]');
     if (await collapseBtn.count()) {
       await collapseBtn.click();
-      await page.waitForTimeout(200);
-      if (await page.locator(".sidebar-collapsed").count()) ok("sidebar collapse");
+      await page.waitForSelector(".app-shell.sidebar-collapsed", { timeout: 3000 });
+      if (await page.locator(".app-shell.sidebar-collapsed").count()) ok("sidebar collapse");
       else fail("sidebar collapse");
-      await collapseBtn.click();
+      await page.locator('button[aria-label="Expand sidebar"]').click();
     } else fail("sidebar collapse");
 
     // Mobile
