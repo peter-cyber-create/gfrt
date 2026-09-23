@@ -88,7 +88,7 @@ export default function AppLayout() {
       <aside className={`app-sidebar ${mobileOpen ? "open" : ""}`} aria-label="Primary" id="app-sidebar">
         <div className="sidebar-head">
           <Link to="/home" className="sidebar-brand-link" onClick={() => setMobileOpen(false)}>
-            <img src={assetUrl("img/coa2.png")} alt="" height="28" />
+            <img src={assetUrl("img/coa2.png")} alt="" height="32" width="32" />
             {!collapsed && (
               <div className="sidebar-brand-text">
                 <strong>GFRT</strong>

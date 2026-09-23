@@ -80,7 +80,7 @@ async function login(page) {
     else fail("login primary CTA");
     if (await page.locator("[data-testid=demo-quick-login]").count()) {
       const label = await page.locator(".demo-quick-login-label").innerText();
-      if (/demo accounts|quick sign-in/i.test(label)) ok("login demo accounts secondary label", label);
+      if (/quick access|demo accounts|quick sign-in/i.test(label)) ok("login demo accounts secondary label", label);
       else fail("login demo accounts secondary label", label);
     } else ok("login demo accounts secondary label", "not in this build");
     const loginOv = await overflow(page);
@@ -94,7 +94,7 @@ async function login(page) {
       fail("no demo chrome in app shell", "badge/banner still present");
     } else ok("no demo chrome in app shell");
     const chromeText = await page.locator(".app-shell").innerText();
-    const banned = ["Presentation Mode", "Mock Data", "Reconstructed", "Showcase", "Prototype", "Sample Data"];
+    const banned = ["Presentation Mode", "Mock Data", "Reconstructed", "Showcase", "Prototype", "Sample Data", "Demo accounts", "Demo mode"];
     const hits = banned.filter((b) => chromeText.includes(b));
     if (hits.length === 0) ok("no banned marketing/demo terminology in shell");
     else fail("no banned marketing/demo terminology in shell", hits.join(", "));

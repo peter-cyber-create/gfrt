@@ -136,7 +136,7 @@ export default function SettingsPage() {
               <dd className="col-sm-9">{user?.role}</dd>
               <dt className="col-sm-3">Data source</dt>
               <dd className="col-sm-9" data-testid="data-source">
-                {getDataSource() === "api" ? "API" : "Local"}
+                {getDataSource() === "api" ? "API" : "Application"}
               </dd>
               <dt className="col-sm-3">Permissions</dt>
               <dd className="col-sm-9">{(user?.permissions || []).length} granted</dd>
@@ -268,10 +268,10 @@ export default function SettingsPage() {
                   <dt className="col-sm-4">Name</dt>
                   <dd className="col-sm-8">{APP_NAME}</dd>
                   <dt className="col-sm-4">Environment</dt>
-                  <dd className="col-sm-8">{DEMO_MODE ? "Local" : STAGING_PRESENTATION_RESET ? "Staging" : "Standard"}</dd>
+                  <dd className="col-sm-8">{DEMO_MODE ? "Standard" : STAGING_PRESENTATION_RESET ? "Staging" : "Standard"}</dd>
                   <dt className="col-sm-4">Data source</dt>
                   <dd className="col-sm-8" data-testid="data-source">
-                    {getDataSource() === "api" ? "API" : "Local"}
+                    {getDataSource() === "api" ? "API" : "Application"}
                   </dd>
                 </dl>
               </div>
@@ -281,7 +281,7 @@ export default function SettingsPage() {
                 <div className="card-header">Reset application data</div>
                 <div className="card-body">
                   <p className="text-muted small mb-3">
-                    Restores the initial dataset{DEMO_MODE ? " and local passwords" : ""}. Does not affect live systems.
+                    Restores the initial dataset{DEMO_MODE ? " and stored passwords" : ""}. Does not affect live systems.
                   </p>
                   <button
                     type="button"

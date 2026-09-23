@@ -19,14 +19,14 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState("");
-  const [presentationAccounts, setPresentationAccounts] = useState([]);
+  const [quickLoading, setQuickLoading] = useState("");
+  const [quickAccounts, setQuickAccounts] = useState([]);
 
   useEffect(() => {
     if (import.meta.env.VITE_DEMO_MODE === "false") return undefined;
     let cancelled = false;
     import("../services/mock/authService.js").then((mod) => {
-      if (!cancelled) setPresentationAccounts(mod.DEMO_PRESENTATION_ACCOUNTS || []);
+      if (!cancelled) setQuickAccounts(mod.DEMO_PRESENTATION_ACCOUNTS || []);
     });
     return () => {
       cancelled = true;
@@ -41,7 +41,7 @@ export default function LoginPage() {
     return login(nextEmail, nextPassword)
       .then((result) => {
         setLoading(false);
-        setDemoLoading("");
+        setQuickLoading("");
         if (!result.ok) {
           setError(result.message);
           return;
@@ -51,7 +51,7 @@ export default function LoginPage() {
       })
       .catch(() => {
         setLoading(false);
-        setDemoLoading("");
+        setQuickLoading("");
         setError("Login failed.");
       });
   }
@@ -65,143 +65,146 @@ export default function LoginPage() {
     runLogin(email, password);
   }
 
-  function onPresentationLogin(account) {
+  function onQuickLogin(account) {
     setEmail(account.username);
     setPassword(account.password);
-    setDemoLoading(account.id);
+    setQuickLoading(account.id);
     runLogin(account.username, account.password);
   }
 
-  function onStagingDemoLogin(account) {
+  function onStagingQuickLogin(account) {
     if (!STAGING_QUICK_LOGIN || !STAGING_DEMO_PASSWORD) {
-      setError("Quick sign-in is not enabled in this build.");
+      setError("Quick access is not enabled in this build.");
       return;
     }
     setEmail(account.email);
-    setDemoLoading(account.id);
+    setQuickLoading(account.id);
     runLogin(account.email, STAGING_DEMO_PASSWORD);
   }
 
+  const showQuickAccess = (DEMO_MODE && quickAccounts.length > 0) || STAGING_QUICK_LOGIN;
+
   return (
     <main className="login-page">
-      <div className="login-panel">
-        <div className="login-panel-head">
-          <img src={assetUrl("img/coa2.png")} alt="" height="40" width="40" />
-          <div>
-            <div className="login-app-name">{APP_NAME}</div>
-            <div className="login-app-meta text-muted">Sign in to continue</div>
+      <div className="login-shell">
+        <aside className="login-brand" aria-label="Application identity">
+          <img src={assetUrl("img/coa2.png")} alt="" className="login-brand-mark" width="56" height="56" />
+          <p className="login-brand-kicker">GFRT</p>
+          <h1 className="login-brand-title">{APP_NAME}</h1>
+          <p className="login-brand-copy">
+            Sign in to manage requisitions, approvals, and performance reporting.
+          </p>
+        </aside>
+
+        <div className="login-panel">
+          <div className="login-panel-head">
+            <h2 className="login-panel-title">Sign in</h2>
+            <p className="login-panel-meta text-muted">Enter your account credentials to continue.</p>
           </div>
-        </div>
 
-        <div className="login-panel-body">
-          {error && (
-            <div className="alert alert-danger py-2" role="alert">
-              {error}
-            </div>
-          )}
+          <div className="login-panel-body">
+            {error && (
+              <div className="alert alert-danger py-2" role="alert">
+                {error}
+              </div>
+            )}
 
-          <form method="post" action="#" onSubmit={onSubmit} noValidate>
-            <div className="form-group">
-              <label htmlFor="email">Username</label>
-              <input
-                id="email"
-                type="text"
-                className={`form-control ${error ? "is-invalid" : ""}`}
-                name="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="username"
-                autoFocus
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <div className="password-field">
+            <form method="post" action="#" onSubmit={onSubmit} noValidate>
+              <div className="form-group">
+                <label htmlFor="email">Username or email</label>
                 <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  className="form-control"
-                  name="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  id="email"
+                  type="text"
+                  className={`form-control ${error ? "is-invalid" : ""}`}
+                  name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
-                  autoComplete="current-password"
+                  autoComplete="username"
+                  autoFocus
                 />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  onClick={() => setShowPassword((v) => !v)}
-                >
-                  <i className={`fas fa-eye${showPassword ? "-slash" : ""}`} aria-hidden="true" />
-                </button>
               </div>
-            </div>
 
-            <button type="submit" className="btn btn-primary login-submit" disabled={loading}>
-              {loading ? "Signing in…" : "Sign in"}
-            </button>
-
-            <div className="login-secondary-row">
-              <div className="form-check mb-0">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  name="remember"
-                  id="remember"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                />
-                <label className="form-check-label small" htmlFor="remember">
-                  Remember me
-                </label>
-              </div>
-              <Link className="small" to="/password/reset">
-                Forgot password?
-              </Link>
-            </div>
-          </form>
-
-          {DEMO_MODE && presentationAccounts.length > 0 && (
-            <div className="demo-quick-login" data-testid="demo-quick-login">
-              <div className="demo-quick-login-label">Demo accounts</div>
-              <div className="demo-quick-login-actions">
-                {presentationAccounts.map((account) => (
+              <div className="form-group">
+                <label htmlFor="password">Password</label>
+                <div className="password-field">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    className="form-control"
+                    name="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                  />
                   <button
-                    key={account.id}
                     type="button"
-                    className="btn btn-sm btn-outline-secondary"
-                    id={`demo-login-${account.id}`}
-                    disabled={loading}
-                    onClick={() => onPresentationLogin(account)}
+                    className="password-toggle"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    onClick={() => setShowPassword((v) => !v)}
                   >
-                    {demoLoading === account.id ? "…" : account.label}
+                    <i className={`fas fa-eye${showPassword ? "-slash" : ""}`} aria-hidden="true" />
                   </button>
-                ))}
+                </div>
               </div>
-            </div>
-          )}
 
-          {STAGING_QUICK_LOGIN && (
-            <div className="demo-quick-login" data-testid="staging-quick-login">
-              <div className="demo-quick-login-label">Quick sign-in</div>
-              <div className="demo-quick-login-actions">
-                {STAGING_ACCOUNTS.map((account) => (
-                  <button
-                    key={account.id}
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary"
-                    disabled={loading}
-                    onClick={() => onStagingDemoLogin(account)}
-                  >
-                    {demoLoading === account.id ? "Signing in…" : account.label}
-                  </button>
-                ))}
+              <div className="login-secondary-row">
+                <div className="form-check mb-0">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    name="remember"
+                    id="remember"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                  />
+                  <label className="form-check-label" htmlFor="remember">
+                    Remember me
+                  </label>
+                </div>
+                <Link to="/password/reset">Forgot password?</Link>
               </div>
-            </div>
-          )}
+
+              <button type="submit" className="btn btn-primary login-submit" disabled={loading}>
+                {loading ? "Signing in…" : "Sign in"}
+              </button>
+            </form>
+
+            {showQuickAccess && (
+              <div className="demo-quick-login" data-testid="demo-quick-login">
+                <div className="demo-quick-login-label">Quick access</div>
+                <div className="demo-quick-login-actions">
+                  {DEMO_MODE &&
+                    quickAccounts.map((account) => (
+                      <button
+                        key={account.id}
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary"
+                        id={`demo-login-${account.id}`}
+                        disabled={loading}
+                        onClick={() => onQuickLogin(account)}
+                      >
+                        {quickLoading === account.id ? "…" : account.label}
+                      </button>
+                    ))}
+                  {STAGING_QUICK_LOGIN &&
+                    STAGING_ACCOUNTS.map((account) => (
+                      <button
+                        key={account.id}
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary"
+                        data-testid="staging-quick-login"
+                        disabled={loading}
+                        onClick={() => onStagingQuickLogin(account)}
+                      >
+                        {quickLoading === account.id ? "Signing in…" : account.label}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </main>
