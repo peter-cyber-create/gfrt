@@ -38,9 +38,10 @@ function fail(name, detail = "") {
   console.log(`FAIL  ${name}${detail ? " — " + detail : ""}`);
 }
 
-async function httpStatus(path) {
-  const res = await fetch(`${BASE}${path === "/" ? "/" : path}`, { redirect: "manual" });
-  return res.status;
+async function httpFinal(path) {
+  const url = `${BASE}${path === "/" ? "/" : path}`;
+  const res = await fetch(url, { redirect: "follow" });
+  return { status: res.status, finalUrl: res.url };
 }
 
 (async () => {
@@ -50,10 +51,12 @@ async function httpStatus(path) {
   console.log(`Pages smoke against ${BASE}`);
 
   for (const path of ROUTES) {
-    const status = await httpStatus(path);
-    // Known app routes must be real 200 shells (not GitHub 404.html fallback).
-    if (status === 200) ok(`http ${path}`, String(status));
-    else fail(`http ${path}`, `expected 200, got ${status}`);
+    const { status, finalUrl } = await httpFinal(path);
+    // Known app routes must resolve to a real HTML shell (200 after any trailing-slash redirect).
+    // GitHub Pages may 301 `/login` → `/login/` when content is `login/index.html` — that is OK.
+    // A true 404 fallback response must not be the primary path for known routes.
+    if (status === 200) ok(`http ${path}`, finalUrl);
+    else fail(`http ${path}`, `expected 200, got ${status} (${finalUrl})`);
   }
 
   const browser = await chromium.launch({ headless: true });

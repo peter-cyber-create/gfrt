@@ -48,10 +48,11 @@ CLONE_URL=http://127.0.0.1:4173/gfrt npm run validate
 
 GitHub Pages has no server rewrite to `index.html`. After each build, `scripts/pages-spa-fallback.sh`:
 
-1. Writes a real `index.html` shell under each known client route (`login/`, `home/`, `requisitions/`, …) so direct open / refresh return **HTTP 200**.
-2. Still writes `404.html` only as a safety net for unknown paths.
+1. Writes a real `index.html` shell under each known client route (`login/`, `home/`, `requisitions/`, …) so direct open / refresh resolve to a **real HTML document** (HTTP **200** at `/route/`).
+2. GitHub Pages may **301** `/gfrt/login` → `/gfrt/login/` when the shell lives in a directory — browsers follow this automatically; it is **not** the 404 fallback.
+3. Still writes `404.html` only as a safety net for **unknown** paths.
 
-Do not rely on the GitHub 404 page for known application routes.
+Verify with: `PAGES_URL=https://peter-cyber-create.github.io/gfrt npm run pages:smoke`
 
 ## Demo safety
 
