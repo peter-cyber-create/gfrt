@@ -10,6 +10,12 @@ import LoadingState from "../components/LoadingState";
 import { STATUS_CODE_TO_LABEL } from "../data/config.js";
 import { useAuth } from "../auth/AuthContext";
 import { ALLOWED_TRANSITIONS } from "../domain/requisitionLifecycle.js";
+import { formatUgx, lineTotalUgx } from "../lib/money.js";
+import RequisitionFormFields, {
+  buildRequisitionPayload,
+  emptyRequisitionForm,
+  validateRequisitionForm,
+} from "../components/RequisitionFormFields.jsx";
 import { departmentService, requisitionService } from "../services/index.js";
 
 export default function RequisitionsPage() {
@@ -29,18 +35,10 @@ export default function RequisitionsPage() {
   const [sortDir, setSortDir] = useState("desc");
   const [selected, setSelected] = useState(null);
   const [note, setNote] = useState("");
-  const [createForm, setCreateForm] = useState({
-    facility: "",
-    district: "",
-    departmentId: "",
-    description: "",
-    amountValue: "",
-    itemDescription: "",
-    itemQuantity: "1",
-    itemUnit: "box",
-    itemUnitCost: "0",
-  });
+  const [createForm, setCreateForm] = useState(() => emptyRequisitionForm());
   const [creating, setCreating] = useState(false);
+  const [createMode, setCreateMode] = useState("draft"); // draft | submit
+  const [uploading, setUploading] = useState(false);
   const details = useLocalModal();
   const createModal = useLocalModal();
   const pageSize = 6;
@@ -87,56 +85,50 @@ export default function RequisitionsPage() {
   }
 
   function openCreate() {
-    setCreateForm({
-      facility: "",
-      district: "",
-      departmentId: deptRecords[0]?.id || "",
-      description: "",
-      amountValue: "",
-      itemDescription: "",
-      itemQuantity: "1",
-      itemUnit: "box",
-      itemUnitCost: "0",
-    });
+    setCreateForm(emptyRequisitionForm(deptRecords[0]?.id || ""));
+    setCreateMode("draft");
     createModal.openModal();
   }
 
-  async function saveCreate(e) {
+  async function saveCreate(e, mode = createMode) {
     e.preventDefault();
     if (!can("requisition.create")) {
       notify("You do not have permission to create requisitions.", "danger");
       return;
     }
-    const qty = Number(createForm.itemQuantity);
-    const unitCost = Number(createForm.itemUnitCost);
-    const amountValue = Number(createForm.amountValue);
-    if (!createForm.facility || !createForm.district || !createForm.departmentId || !createForm.description) {
-      notify("Please fill all required fields.", "danger");
+    const validationError = validateRequisitionForm(createForm);
+    if (validationError) {
+      notify(validationError, "danger");
       return;
     }
-    if (!createForm.itemDescription || !Number.isFinite(qty) || qty < 1) {
-      notify("At least one line item with quantity is required.", "danger");
+    if (mode === "submit" && !can("requisition.submit")) {
+      notify("You do not have permission to submit requisitions.", "danger");
       return;
     }
     setCreating(true);
+    setCreateMode(mode);
     try {
-      const created = await requisitionService.create({
-        facility: createForm.facility,
-        district: createForm.district,
-        departmentId: createForm.departmentId,
-        description: createForm.description,
-        amountValue: Number.isFinite(amountValue) ? Math.max(0, Math.round(amountValue)) : Math.max(0, Math.round(qty * (unitCost || 0))),
-        items: [
-          {
-            description: createForm.itemDescription,
-            quantity: Math.round(qty),
-            unit: createForm.itemUnit || "unit",
-            unitCost: Number.isFinite(unitCost) ? Math.max(0, Math.round(unitCost)) : 0,
-          },
-        ],
-      });
+      const payload = buildRequisitionPayload(createForm);
+      let created = await requisitionService.create(payload, user?.name);
+      if (mode === "submit") {
+        const result = await requisitionService.transition(created.id, "SUBMITTED", {
+          actor: user?.name || "User",
+          note: "Submitted",
+        });
+        if (!result.ok) {
+          notify(result.message || "Draft saved but submit failed.", "danger");
+          createModal.closeModal();
+          setPage(1);
+          await refresh();
+          if (created) openDetails(created);
+          return;
+        }
+        created = result.requisition;
+        notify(`Requisition ${created?.number || ""} submitted.`);
+      } else {
+        notify(`Requisition ${created?.number || "created"} saved as draft.`);
+      }
       createModal.closeModal();
-      notify(`Requisition ${created?.number || "created"} saved as draft.`);
       setPage(1);
       await refresh();
       if (created) openDetails(created);
@@ -144,6 +136,31 @@ export default function RequisitionsPage() {
       notify(err.message || "Unable to create requisition.", "danger");
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function onUploadAttachment(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !selected) return;
+    if (!can("requisition.edit")) {
+      notify("You do not have permission to upload attachments.", "danger");
+      return;
+    }
+    if (typeof requisitionService.uploadAttachment !== "function") {
+      notify("Attachment upload is not available.", "danger");
+      return;
+    }
+    setUploading(true);
+    try {
+      await requisitionService.uploadAttachment(selected.id, file, user?.name);
+      const full = await requisitionService.getById(selected.id);
+      setSelected(full);
+      notify("Attachment uploaded.");
+    } catch (err) {
+      notify(err.message || "Upload failed.", "danger");
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -358,7 +375,7 @@ export default function RequisitionsPage() {
 
       <LocalModal
         id="reqDetails"
-        title={selected ? selected.id : "Requisition"}
+        title={selected ? (selected.number || selected.id) : "Requisition"}
         open={details.open}
         onClose={details.closeModal}
         size="modal-lg"
@@ -424,7 +441,8 @@ export default function RequisitionsPage() {
                       <th scope="col">Description</th>
                       <th scope="col">Qty</th>
                       <th scope="col">Unit</th>
-                      <th scope="col">Est. value</th>
+                      <th scope="col">Unit cost</th>
+                      <th scope="col">Line total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -433,7 +451,8 @@ export default function RequisitionsPage() {
                         <td>{item.description}</td>
                         <td>{item.quantity}</td>
                         <td>{item.unit}</td>
-                        <td>UGX {(item.unitCost || 0).toLocaleString("en-UG")}</td>
+                        <td>{formatUgx(item.unitCost || 0)}</td>
+                        <td>{formatUgx(lineTotalUgx(item))}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -474,6 +493,46 @@ export default function RequisitionsPage() {
                   </ul>
                 )}
               </div>
+            </div>
+
+            <div className="mb-3">
+              <div className="detail-section-title">Attachments</div>
+              {(selected.attachments || []).length === 0 ? (
+                <p className="small text-muted mb-2">No attachments.</p>
+              ) : (
+                <ul className="mb-2 pl-3">
+                  {(selected.attachments || []).map((a) => (
+                    <li key={a.id} className="small">
+                      {typeof requisitionService.attachmentDownloadUrl === "function" && a.id ? (
+                        <a
+                          href={requisitionService.attachmentDownloadUrl(a.id)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {a.filename}
+                        </a>
+                      ) : (
+                        <span>{a.filename}</span>
+                      )}
+                      {a.sizeBytes != null && (
+                        <span className="text-muted"> · {Math.round(a.sizeBytes / 1024)} KB</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {can("requisition.edit") && (
+                <label className="btn btn-sm btn-outline-secondary mb-0">
+                  {uploading ? "Uploading…" : "Upload attachment"}
+                  <input
+                    type="file"
+                    className="d-none"
+                    data-testid="attachment-upload"
+                    disabled={uploading}
+                    onChange={onUploadAttachment}
+                  />
+                </label>
+              )}
             </div>
 
             <div className="border-top pt-3">
@@ -522,124 +581,39 @@ export default function RequisitionsPage() {
         title="New Requisition"
         open={createModal.open}
         onClose={createModal.closeModal}
+        size="modal-lg"
         footer={
           <>
-            <button type="button" className="btn btn-secondary" onClick={createModal.closeModal}>
+            <button type="button" className="btn btn-secondary" onClick={createModal.closeModal} disabled={creating}>
               Cancel
             </button>
-            <button type="submit" form="createRequisitionForm" className="btn btn-primary" disabled={creating}>
-              {creating ? "Saving…" : "Create draft"}
+            <button
+              type="button"
+              className="btn btn-outline-primary"
+              data-testid="save-draft-btn"
+              disabled={creating || !can("requisition.create")}
+              onClick={(e) => saveCreate(e, "draft")}
+            >
+              {creating && createMode === "draft" ? "Saving…" : "Save draft"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              data-testid="submit-requisition-btn"
+              disabled={creating || !can("requisition.create") || !can("requisition.submit")}
+              onClick={(e) => saveCreate(e, "submit")}
+            >
+              {creating && createMode === "submit" ? "Submitting…" : "Submit requisition"}
             </button>
           </>
         }
       >
-        <form id="createRequisitionForm" onSubmit={saveCreate}>
-          <div className="form-row">
-            <div className="form-group col-md-6">
-              <label htmlFor="crFacility">Facility</label>
-              <input
-                id="crFacility"
-                className="form-control"
-                value={createForm.facility}
-                onChange={(e) => setCreateForm({ ...createForm, facility: e.target.value })}
-                required
-              />
-            </div>
-            <div className="form-group col-md-6">
-              <label htmlFor="crDistrict">District</label>
-              <input
-                id="crDistrict"
-                className="form-control"
-                value={createForm.district}
-                onChange={(e) => setCreateForm({ ...createForm, district: e.target.value })}
-                required
-              />
-            </div>
-          </div>
-          <div className="form-group">
-            <label htmlFor="crDept">Department</label>
-            <select
-              id="crDept"
-              className="form-control"
-              value={createForm.departmentId}
-              onChange={(e) => setCreateForm({ ...createForm, departmentId: e.target.value })}
-              required
-            >
-              {deptRecords.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label htmlFor="crDesc">Description</label>
-            <textarea
-              id="crDesc"
-              className="form-control"
-              rows={2}
-              value={createForm.description}
-              onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="crAmount">Total amount (UGX)</label>
-            <input
-              id="crAmount"
-              type="number"
-              min="0"
-              className="form-control"
-              value={createForm.amountValue}
-              onChange={(e) => setCreateForm({ ...createForm, amountValue: e.target.value })}
-              placeholder="Optional — defaults to qty × unit cost"
-            />
-          </div>
-          <div className="detail-section-title">Line item</div>
-          <div className="form-row">
-            <div className="form-group col-md-6">
-              <label htmlFor="crItemDesc">Item description</label>
-              <input
-                id="crItemDesc"
-                className="form-control"
-                value={createForm.itemDescription}
-                onChange={(e) => setCreateForm({ ...createForm, itemDescription: e.target.value })}
-                required
-              />
-            </div>
-            <div className="form-group col-md-2">
-              <label htmlFor="crQty">Qty</label>
-              <input
-                id="crQty"
-                type="number"
-                min="1"
-                className="form-control"
-                value={createForm.itemQuantity}
-                onChange={(e) => setCreateForm({ ...createForm, itemQuantity: e.target.value })}
-                required
-              />
-            </div>
-            <div className="form-group col-md-2">
-              <label htmlFor="crUnit">Unit</label>
-              <input
-                id="crUnit"
-                className="form-control"
-                value={createForm.itemUnit}
-                onChange={(e) => setCreateForm({ ...createForm, itemUnit: e.target.value })}
-              />
-            </div>
-            <div className="form-group col-md-2">
-              <label htmlFor="crCost">Unit cost</label>
-              <input
-                id="crCost"
-                type="number"
-                min="0"
-                className="form-control"
-                value={createForm.itemUnitCost}
-                onChange={(e) => setCreateForm({ ...createForm, itemUnitCost: e.target.value })}
-              />
-            </div>
-          </div>
+        <form
+          id="createRequisitionForm"
+          onSubmit={(e) => saveCreate(e, "draft")}
+          data-testid="create-requisition-form"
+        >
+          <RequisitionFormFields form={createForm} setForm={setCreateForm} departments={deptRecords} />
         </form>
       </LocalModal>
     </div>

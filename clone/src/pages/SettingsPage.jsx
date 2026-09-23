@@ -71,6 +71,10 @@ export default function SettingsPage() {
       setPasswordForm(emptyPasswordForm);
       setPasswordMessage(result.message || "Password updated.");
       notify("Password updated.");
+      if (result.requiresReLogin) {
+        await logout();
+        navigate("/login");
+      }
     } catch (err) {
       setPasswordError(err?.message || "Unable to change password.");
     } finally {

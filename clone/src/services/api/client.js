@@ -162,21 +162,44 @@ export const apiAuthService = {
   },
 
   /**
-   * Logged-in password change is not exposed by the current API.
-   * Use the password-reset endpoints when signed out.
+   * Logged-in password change against the API.
    */
-  async changePassword() {
-    return {
-      ok: false,
-      message: "Change password while signed in is available in demo mode. Use Reset password when connected to the API.",
-    };
+  async changePassword(user, currentPassword, newPassword, confirmPassword) {
+    if (newPassword !== confirmPassword) {
+      return { ok: false, message: "Passwords do not match." };
+    }
+    if (!newPassword || String(newPassword).length < 8) {
+      return { ok: false, message: "Password must be at least 8 characters." };
+    }
+    try {
+      const payload = await api("/api/v1/auth/change-password", {
+        method: "POST",
+        body: { currentPassword, newPassword },
+      });
+      this.persistSession(null);
+      return {
+        ok: true,
+        message: payload?.data?.message || "Password updated.",
+        requiresReLogin: true,
+      };
+    } catch (err) {
+      return { ok: false, message: err.message || "Unable to change password." };
+    }
   },
 
-  async adminResetPassword() {
-    return {
-      ok: false,
-      message: "Admin password reset is available in demo mode only.",
-    };
+  async adminResetPassword(targetUser, temporaryPassword) {
+    if (!targetUser?.id) {
+      return { ok: false, message: "User not found." };
+    }
+    try {
+      const payload = await api(`/api/v1/users/${targetUser.id}/reset-password`, {
+        method: "POST",
+        body: { temporaryPassword },
+      });
+      return { ok: true, message: payload?.data?.message || "Temporary password set." };
+    } catch (err) {
+      return { ok: false, message: err.message || "Unable to reset password." };
+    }
   },
 };
 
@@ -232,6 +255,12 @@ function mapRequisition(row) {
     history,
     approvals,
     comments,
+    attachments: (row.attachments || []).map((a) => ({
+      id: a.id,
+      filename: a.filename,
+      mimeType: a.mimeType,
+      sizeBytes: a.sizeBytes,
+    })),
   };
 }
 
@@ -304,6 +333,12 @@ export const apiRequisitionService = {
     return mapRequisition(payload.data);
   },
 
+  async update(id, input) {
+    const payload = await api(`/api/v1/requisitions/${id}`, { method: "PATCH", body: input });
+    const nextId = payload.data?.id || id;
+    return this.getById(nextId);
+  },
+
   async transition(id, toCode, { note = "" } = {}) {
     const action = ACTION_BY_STATUS[toCode];
     if (!action) return { ok: false, message: `Unknown status ${toCode}` };
@@ -317,6 +352,26 @@ export const apiRequisitionService = {
     } catch (err) {
       return { ok: false, message: err.message, status: err.status };
     }
+  },
+
+  async uploadAttachment(id, file) {
+    assertApiAllowed();
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${API_BASE}/api/v1/requisitions/${id}/attachments`, {
+      method: "POST",
+      credentials: "include",
+      body: form,
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(payload?.error?.message || `Upload failed (${res.status})`);
+    }
+    return payload.data;
+  },
+
+  attachmentDownloadUrl(attachmentId) {
+    return `${API_BASE}/api/v1/attachments/${attachmentId}`;
   },
 
   async confirmLocal() {

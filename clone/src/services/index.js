@@ -1,14 +1,9 @@
 /**
- * Service facade — UI should import from here, not from mock data arrays.
- * Demo mode always resolves to mock implementations.
+ * Service facade — UI imports from here only.
+ *
+ * Build-time branching uses `import.meta.env.VITE_*` so Vite can dead-code
+ * eliminate the mock graph (including presentation passwords) from API builds.
  */
-import { DATA_SOURCE, DEMO_MODE } from "../data/config.js";
-import { mockAuthService } from "./mock/authService.js";
-import { mockRequisitionService } from "./mock/requisitionService.js";
-import { mockUserService } from "./mock/userService.js";
-import { mockRoleService } from "./mock/roleService.js";
-import { mockReportService } from "./mock/reportService.js";
-import { mockNotificationService, mockAuditService } from "./mock/notificationService.js";
 import {
   apiAuthService,
   apiRequisitionService,
@@ -20,23 +15,65 @@ import {
   apiDepartmentService,
 } from "./api/client.js";
 
-const useApi = !DEMO_MODE && DATA_SOURCE === "api";
+const isDemo = import.meta.env.VITE_DEMO_MODE !== "false";
+const useApi = !isDemo && (import.meta.env.VITE_DATA_SOURCE || "api") === "api";
 
-export const authService = useApi ? apiAuthService : mockAuthService;
-export const requisitionService = useApi ? apiRequisitionService : mockRequisitionService;
-export const userService = useApi ? apiUserService : mockUserService;
-export const roleService = useApi ? apiRoleService : mockRoleService;
-export const reportService = useApi ? apiReportService : mockReportService;
-export const notificationService = useApi ? apiNotificationService : mockNotificationService;
-export const auditService = useApi ? apiAuditService : mockAuditService;
-export const departmentService = useApi
-  ? apiDepartmentService
-  : {
-      async list() {
-        const { DEPARTMENTS } = await import("../data/config.js");
-        return DEPARTMENTS.map((name, i) => ({ id: `mock-dept-${i}`, name }));
-      },
-    };
+/** @type {typeof apiAuthService} */
+export let authService;
+/** @type {typeof apiRequisitionService} */
+export let requisitionService;
+/** @type {typeof apiUserService} */
+export let userService;
+/** @type {typeof apiRoleService} */
+export let roleService;
+/** @type {typeof apiReportService} */
+export let reportService;
+/** @type {typeof apiNotificationService} */
+export let notificationService;
+/** @type {typeof apiAuditService} */
+export let auditService;
+/** @type {typeof apiDepartmentService} */
+export let departmentService;
+
+if (useApi) {
+  authService = apiAuthService;
+  requisitionService = apiRequisitionService;
+  userService = apiUserService;
+  roleService = apiRoleService;
+  reportService = apiReportService;
+  notificationService = apiNotificationService;
+  auditService = apiAuditService;
+  departmentService = apiDepartmentService;
+} else {
+  const [
+    { mockAuthService },
+    { mockRequisitionService },
+    { mockUserService },
+    { mockRoleService },
+    { mockReportService },
+    { mockNotificationService, mockAuditService },
+  ] = await Promise.all([
+    import("./mock/authService.js"),
+    import("./mock/requisitionService.js"),
+    import("./mock/userService.js"),
+    import("./mock/roleService.js"),
+    import("./mock/reportService.js"),
+    import("./mock/notificationService.js"),
+  ]);
+  authService = mockAuthService;
+  requisitionService = mockRequisitionService;
+  userService = mockUserService;
+  roleService = mockRoleService;
+  reportService = mockReportService;
+  notificationService = mockNotificationService;
+  auditService = mockAuditService;
+  departmentService = {
+    async list() {
+      const { DEPARTMENTS } = await import("../data/config.js");
+      return DEPARTMENTS.map((name, i) => ({ id: `mock-dept-${i}`, name }));
+    },
+  };
+}
 
 export function getDataSource() {
   return useApi ? "api" : "mock";

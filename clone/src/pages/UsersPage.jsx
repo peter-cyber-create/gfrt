@@ -113,7 +113,13 @@ export default function UsersPage() {
       notify("Admin password reset is not available.", "danger");
       return;
     }
-    const temporary = "TempPass123!";
+    const temporary = window.prompt("Temporary password (min 8 characters):", "TempPass123!");
+    if (!temporary) return;
+    if (temporary.length < 8) {
+      notify("Password must be at least 8 characters.", "danger");
+      return;
+    }
+    if (!window.confirm(`Reset password for ${u.name}?`)) return;
     try {
       const result = await authService.adminResetPassword(u, temporary, currentUser?.name);
       if (!result?.ok) {

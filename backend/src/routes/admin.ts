@@ -4,6 +4,7 @@ import {
   createUserSchema,
   updateUserSchema,
   updateUserStatusSchema,
+  adminResetPasswordSchema,
   uuidParam,
   validateBody,
   validateParams,
@@ -17,6 +18,7 @@ import {
   updateUser,
   updateUserStatus,
 } from "../services/userService.js";
+import { adminResetUserPassword } from "../services/authService.js";
 import { listAuditLogs } from "../services/auditService.js";
 import { prisma } from "../lib/prisma.js";
 import { AppError } from "../lib/errors.js";
@@ -86,6 +88,26 @@ usersRouter.patch(
     try {
       const data = await updateUserStatus(req.user!, String(req.params.id), req.body.status, req.requestId);
       res.json({ data: { id: data.id, status: data.status } });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+usersRouter.post(
+  "/:id/reset-password",
+  requirePermission("user.manage"),
+  validateParams(uuidParam),
+  validateBody(adminResetPasswordSchema),
+  async (req, res, next) => {
+    try {
+      await adminResetUserPassword(
+        req.user!,
+        String(req.params.id),
+        req.body.temporaryPassword,
+        req.requestId
+      );
+      res.json({ data: { ok: true, message: "Temporary password set." } });
     } catch (err) {
       next(err);
     }

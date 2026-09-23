@@ -48,30 +48,6 @@ export const loginSchema = z.object({
   password: z.string().min(1).max(200),
 });
 
-export const createRequisitionSchema = z.object({
-  facility: z.string().min(1).max(200),
-  district: z.string().min(1).max(200),
-  departmentId: z.string().uuid(),
-  description: z.string().min(1).max(5000),
-  amountValue: z.number().int().nonnegative(),
-  requiredAt: z.string().datetime().optional(),
-  items: z
-    .array(
-      z.object({
-        description: z.string().min(1).max(1000),
-        quantity: z.number().int().positive(),
-        unit: z.string().max(50).optional(),
-        unitCost: z.number().int().nonnegative().optional(),
-      })
-    )
-    .min(1)
-    .max(100),
-});
-
-export const transitionSchema = z.object({
-  note: z.string().max(2000).optional(),
-});
-
 export const listRequisitionsQuery = z.object({
   query: z.string().max(200).optional(),
   status: z
@@ -116,4 +92,49 @@ export const passwordResetRequestSchema = z.object({
 export const passwordResetConfirmSchema = z.object({
   token: z.string().min(20).max(200),
   password: z.string().min(8).max(200),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newPassword: z.string().min(8).max(200),
+});
+
+export const adminResetPasswordSchema = z.object({
+  temporaryPassword: z.string().min(8).max(200),
+});
+
+/** Shared line-item shape for create/update. Matches Prisma RequisitionItem. */
+export const requisitionItemSchema = z.object({
+  description: z.string().min(1).max(1000),
+  quantity: z.number().int().positive(),
+  unit: z.string().max(50).optional(),
+  unitCost: z.number().int().nonnegative().optional(),
+});
+
+/**
+ * Create body. amountValue from the client is ignored — the API recalculates
+ * totals from line items (integer UGX).
+ */
+export const createRequisitionSchema = z.object({
+  facility: z.string().min(1).max(200),
+  district: z.string().min(1).max(200),
+  departmentId: z.string().uuid(),
+  description: z.string().min(1).max(5000),
+  amountValue: z.number().int().nonnegative().optional(),
+  requiredAt: z.string().datetime().optional().nullable(),
+  items: z.array(requisitionItemSchema).min(1).max(100),
+});
+
+/** DRAFT-only update. Totals recalculated when items are provided. */
+export const updateRequisitionSchema = z.object({
+  facility: z.string().min(1).max(200).optional(),
+  district: z.string().min(1).max(200).optional(),
+  departmentId: z.string().uuid().optional(),
+  description: z.string().min(1).max(5000).optional(),
+  requiredAt: z.string().datetime().optional().nullable(),
+  items: z.array(requisitionItemSchema).min(1).max(100).optional(),
+});
+
+export const transitionSchema = z.object({
+  note: z.string().max(2000).optional(),
 });

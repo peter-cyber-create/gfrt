@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { APP_NAME, DEMO_MODE, STAGING_DEMO_PASSWORD, STAGING_QUICK_LOGIN } from "../data/mock";
 import DemoBadge from "../components/DemoBadge";
 import { assetUrl } from "../lib/assetUrl.js";
-import { DEMO_PRESENTATION_ACCOUNTS } from "../services/mock/authService.js";
 
 const STAGING_ACCOUNTS = [
   { id: "admin", label: "Admin Demo", email: "admin@gfrt.local" },
@@ -21,6 +20,19 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState("");
+  const [presentationAccounts, setPresentationAccounts] = useState([]);
+
+  useEffect(() => {
+    // Use import.meta.env so Vite can eliminate this chunk from API builds.
+    if (import.meta.env.VITE_DEMO_MODE === "false") return undefined;
+    let cancelled = false;
+    import("../services/mock/authService.js").then((mod) => {
+      if (!cancelled) setPresentationAccounts(mod.DEMO_PRESENTATION_ACCOUNTS || []);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (isAuthenticated) return <Navigate to="/home" replace />;
 
@@ -90,11 +102,11 @@ export default function LoginPage() {
             </div>
           )}
 
-          {DEMO_MODE && (
+          {DEMO_MODE && presentationAccounts.length > 0 && (
             <div className="demo-quick-login" data-testid="demo-quick-login">
               <div className="demo-quick-login-label">Presentation accounts</div>
               <div className="demo-quick-login-actions">
-                {DEMO_PRESENTATION_ACCOUNTS.map((account) => (
+                {presentationAccounts.map((account) => (
                   <button
                     key={account.id}
                     type="button"

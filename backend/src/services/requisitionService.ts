@@ -6,6 +6,7 @@ import {
   type TransitionAction,
 } from "../domain/requisitionLifecycle.js";
 import { AppError } from "../lib/errors.js";
+import { requisitionTotalUgx } from "../lib/money.js";
 import { prisma } from "../lib/prisma.js";
 import type { AuthUser } from "./authService.js";
 import { writeAudit } from "./auditService.js";
@@ -27,6 +28,17 @@ function maybeForceTxFailure(action: TransitionAction) {
   ) {
     throw new Error("Forced transaction failure for testing");
   }
+}
+
+type ItemInput = { description: string; quantity: number; unit?: string; unitCost?: number };
+
+function normalizeItems(items: ItemInput[]) {
+  return items.map((item) => ({
+    description: item.description.trim(),
+    quantity: Math.trunc(item.quantity),
+    unit: item.unit || null,
+    unitCost: item.unitCost != null ? Math.trunc(item.unitCost) : 0,
+  }));
 }
 
 export async function listRequisitions(filters: {
@@ -79,13 +91,19 @@ export async function createRequisition(
     district: string;
     departmentId: string;
     description: string;
-    amountValue: number;
-    requiredAt?: string;
-    items: Array<{ description: string; quantity: number; unit?: string; unitCost?: number }>;
+    amountValue?: number;
+    requiredAt?: string | null;
+    items: ItemInput[];
   },
   requestId?: string
 ) {
   assertPermission(user, "requisition.create");
+  const items = normalizeItems(input.items);
+  if (!items.length) {
+    throw new AppError("VALIDATION_ERROR", "At least one line item is required.", 400);
+  }
+  // Never trust client-supplied totals.
+  const amountValue = requisitionTotalUgx(items);
   const count = await prisma.requisition.count();
   const number = `REQ-${new Date().getFullYear()}-${String(count + 1).padStart(4, "0")}`;
 
@@ -97,17 +115,12 @@ export async function createRequisition(
         district: input.district,
         departmentId: input.departmentId,
         description: input.description,
-        amountValue: input.amountValue,
+        amountValue,
         requesterId: user.id,
         requiredAt: input.requiredAt ? new Date(input.requiredAt) : null,
         status: "DRAFT",
         items: {
-          create: input.items.map((item) => ({
-            description: item.description,
-            quantity: item.quantity,
-            unit: item.unit,
-            unitCost: item.unitCost,
-          })),
+          create: items,
         },
         history: {
           create: {
@@ -127,13 +140,85 @@ export async function createRequisition(
         entity: "requisition",
         entityId: req.id,
         requestId,
-        metadata: { number: req.number },
+        metadata: { number: req.number, amountValue },
       },
     });
     return req;
   });
 
   return created;
+}
+
+/**
+ * Update a DRAFT requisition. Replaces items when provided and recalculates amount.
+ */
+export async function updateDraftRequisition(
+  user: AuthUser,
+  id: string,
+  input: {
+    facility?: string;
+    district?: string;
+    departmentId?: string;
+    description?: string;
+    requiredAt?: string | null;
+    items?: ItemInput[];
+  },
+  requestId?: string
+) {
+  assertPermission(user, "requisition.edit");
+
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.requisition.findUnique({ where: { id } });
+    if (!current) throw new AppError("NOT_FOUND", "Requisition not found.", 404);
+    if (current.status !== "DRAFT") {
+      throw new AppError("CONFLICT", "Only draft requisitions can be edited.", 409);
+    }
+    if (current.requesterId !== user.id && !user.permissions.includes("user.manage")) {
+      throw new AppError("FORBIDDEN", "You can only edit your own draft requisitions.", 403);
+    }
+
+    const data: Prisma.RequisitionUpdateInput = {};
+    if (input.facility !== undefined) data.facility = input.facility;
+    if (input.district !== undefined) data.district = input.district;
+    if (input.description !== undefined) data.description = input.description;
+    if (input.requiredAt !== undefined) {
+      data.requiredAt = input.requiredAt ? new Date(input.requiredAt) : null;
+    }
+    if (input.departmentId !== undefined) {
+      data.department = { connect: { id: input.departmentId } };
+    }
+
+    if (input.items) {
+      const items = normalizeItems(input.items);
+      if (!items.length) {
+        throw new AppError("VALIDATION_ERROR", "At least one line item is required.", 400);
+      }
+      data.amountValue = requisitionTotalUgx(items);
+      await tx.requisitionItem.deleteMany({ where: { requisitionId: id } });
+      await tx.requisitionItem.createMany({
+        data: items.map((item) => ({ ...item, requisitionId: id })),
+      });
+    }
+
+    const updated = await tx.requisition.update({
+      where: { id },
+      data,
+      include: { items: true, department: true, requester: { select: { id: true, name: true, email: true } } },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        actorId: user.id,
+        action: "requisition.update",
+        entity: "requisition",
+        entityId: id,
+        requestId,
+        metadata: { number: updated.number, amountValue: updated.amountValue },
+      },
+    });
+
+    return updated;
+  });
 }
 
 /**

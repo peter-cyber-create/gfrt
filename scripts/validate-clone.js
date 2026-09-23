@@ -133,6 +133,34 @@ async function login(page) {
       await page.locator(".modal .close").first().click();
     } else fail("requisition details modal");
 
+    // New requisition multi-item form (demo)
+    await page.goto(CLONE_URL + "/requisitions", { waitUntil: "networkidle" });
+    await page.click('button:has-text("New requisition")');
+    await page.waitForTimeout(200);
+    if (await page.locator("[data-testid=create-requisition-form]").count()) {
+      await page.fill("#crFacility", "Test Facility");
+      await page.fill("#crDistrict", "Kampala");
+      await page.fill("#crDesc", "Operational supplies for Q3");
+      await page.fill('input[aria-label="Item 1 description"]', "RDT kits");
+      await page.fill('input[aria-label="Item 1 quantity"]', "4");
+      await page.fill('input[aria-label="Item 1 unit cost"]', "2500");
+      await page.click("[data-testid=add-line-item]");
+      await page.waitForTimeout(100);
+      await page.fill('input[aria-label="Item 2 description"]', "Gloves");
+      await page.fill('input[aria-label="Item 2 quantity"]', "2");
+      await page.fill('input[aria-label="Item 2 unit cost"]', "1000");
+      const totalText = await page.locator("[data-testid=requisition-form-total]").innerText();
+      if (totalText.includes("12,000") || totalText.includes("12000")) ok("line-item total calculation");
+      else fail("line-item total calculation", totalText);
+      await page.click("[data-testid=save-draft-btn]");
+      await page.waitForTimeout(600);
+      if (await page.locator("[data-testid=requisition-detail]").count()) ok("save draft opens detail");
+      else fail("save draft opens detail");
+      await page.locator(".modal .close").first().click({ force: true }).catch(() => {});
+      await page.waitForTimeout(200);
+      await page.keyboard.press("Escape").catch(() => {});
+    } else fail("new requisition form visible");
+
     // Users
     await page.goto(CLONE_URL + "/users", { waitUntil: "networkidle" });
     await page.screenshot({ path: "screenshots/final/07-users.png", fullPage: true });

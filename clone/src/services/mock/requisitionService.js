@@ -127,11 +127,19 @@ export const mockRequisitionService = {
 
   async create(input, actor = "Demo User") {
     await delay();
+    const { requisitionTotalUgx } = await import("../../lib/money.js");
     const id = `REQ-DEMO-${String(store.requisitions.length + 1).padStart(3, "0")}`;
     const deptName =
       typeof input.departmentId === "string" && input.departmentId.startsWith("mock-dept-")
         ? (await import("../../data/config.js")).DEPARTMENTS[Number(input.departmentId.split("-").pop())] || "Laboratory"
         : input.department || "Laboratory";
+    const items = (input.items || []).map((it, i) => ({
+      ...it,
+      unitCost: Math.trunc(Number(it.unitCost) || 0),
+      quantity: Math.trunc(Number(it.quantity) || 0),
+      id: `${id}-I${i + 1}`,
+    }));
+    const amountValue = requisitionTotalUgx(items);
     const row = {
       id,
       number: id,
@@ -141,17 +149,27 @@ export const mockRequisitionService = {
       departmentId: input.departmentId,
       statusCode: "DRAFT",
       status: "Draft",
-      amount: `UGX ${(input.amountValue || 0).toLocaleString()}`,
-      amountValue: input.amountValue || 0,
+      amount: `UGX ${amountValue.toLocaleString("en-UG")}`,
+      amountValue,
       description: input.description,
       requester: actor,
       submitted: "",
       updated: new Date().toISOString().slice(0, 10),
       requiredDate: input.requiredAt ? String(input.requiredAt).slice(0, 10) : "",
-      items: (input.items || []).map((it, i) => ({ ...it, id: `${id}-I${i + 1}` })),
-      history: [],
+      items,
+      history: [
+        {
+          id: `${id}-H1`,
+          fromStatus: null,
+          toStatus: "DRAFT",
+          actor,
+          at: new Date().toISOString(),
+          note: "Created",
+        },
+      ],
       approvals: [],
       comments: [],
+      attachments: [],
     };
     store.requisitions.unshift(row);
     pushAudit({
@@ -161,6 +179,60 @@ export const mockRequisitionService = {
       entityId: id,
     });
     return JSON.parse(JSON.stringify(row));
+  },
+
+  async update(id, input, actor = "Demo User") {
+    await delay();
+    const { requisitionTotalUgx } = await import("../../lib/money.js");
+    const row = store.requisitions.find((r) => r.id === id);
+    if (!row) throw new Error("Requisition not found.");
+    if (row.statusCode !== "DRAFT") throw new Error("Only draft requisitions can be edited.");
+    if (input.facility !== undefined) row.facility = input.facility;
+    if (input.district !== undefined) row.district = input.district;
+    if (input.description !== undefined) row.description = input.description;
+    if (input.departmentId !== undefined) {
+      row.departmentId = input.departmentId;
+      if (String(input.departmentId).startsWith("mock-dept-")) {
+        const { DEPARTMENTS } = await import("../../data/config.js");
+        row.department = DEPARTMENTS[Number(input.departmentId.split("-").pop())] || row.department;
+      }
+    }
+    if (input.requiredAt !== undefined) {
+      row.requiredDate = input.requiredAt ? String(input.requiredAt).slice(0, 10) : "";
+    }
+    if (input.items) {
+      row.items = input.items.map((it, i) => ({
+        ...it,
+        unitCost: Math.trunc(Number(it.unitCost) || 0),
+        quantity: Math.trunc(Number(it.quantity) || 0),
+        id: `${id}-I${i + 1}`,
+      }));
+      row.amountValue = requisitionTotalUgx(row.items);
+      row.amount = `UGX ${row.amountValue.toLocaleString("en-UG")}`;
+    }
+    row.updated = new Date().toISOString().slice(0, 10);
+    pushAudit({ user: actor, action: "requisition.update", entity: "requisition", entityId: id });
+    return JSON.parse(JSON.stringify(row));
+  },
+
+  async uploadAttachment(id, file, actor = "Demo User") {
+    await delay();
+    const row = store.requisitions.find((r) => r.id === id);
+    if (!row) throw new Error("Requisition not found.");
+    row.attachments = row.attachments || [];
+    const att = {
+      id: `ATT-${Date.now()}`,
+      filename: file?.name || "attachment.bin",
+      mimeType: file?.type || "application/octet-stream",
+      sizeBytes: file?.size || 0,
+    };
+    row.attachments.push(att);
+    pushAudit({ user: actor, action: "attachment.upload", entity: "attachment", entityId: att.id });
+    return att;
+  },
+
+  attachmentDownloadUrl() {
+    return "#";
   },
 
   async confirmLocal(id, actor = "Demo User") {

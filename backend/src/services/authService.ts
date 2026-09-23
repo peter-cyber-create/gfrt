@@ -164,4 +164,91 @@ export function readSessionToken(req: Request) {
   return undefined;
 }
 
+/**
+ * Authenticated password change — verifies current password, hashes new one,
+ * invalidates other sessions for the user.
+ */
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+  requestId?: string
+) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw new AppError("NOT_FOUND", "User not found.", 404);
+  }
+  const ok = await verifyPassword(user.passwordHash, currentPassword);
+  if (!ok) {
+    throw new AppError("INVALID_CREDENTIALS", "Current password is incorrect.", 401);
+  }
+  if (currentPassword === newPassword) {
+    throw new AppError("VALIDATION_ERROR", "New password must be different from the current password.", 400);
+  }
+  if (String(newPassword).length < 8) {
+    throw new AppError("VALIDATION_ERROR", "Password must be at least 8 characters.", 400);
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash, failedLogins: 0, lockedUntil: null },
+    }),
+    prisma.session.deleteMany({ where: { userId } }),
+  ]);
+
+  await writeAudit({
+    actorId: userId,
+    action: "auth.password_changed",
+    entity: "user",
+    entityId: userId,
+    requestId,
+  });
+
+  return { ok: true };
+}
+
+/**
+ * Admin-initiated temporary password for a user (requires caller permission check).
+ * Invalidates the target user's sessions.
+ */
+export async function adminResetUserPassword(
+  actor: AuthUser,
+  targetUserId: string,
+  temporaryPassword: string,
+  requestId?: string
+) {
+  if (!actor.permissions.includes("user.manage")) {
+    throw new AppError("FORBIDDEN", "You do not have permission to reset passwords.", 403);
+  }
+  if (String(temporaryPassword).length < 8) {
+    throw new AppError("VALIDATION_ERROR", "Password must be at least 8 characters.", 400);
+  }
+  const target = await prisma.user.findUnique({ where: { id: targetUserId } });
+  if (!target) {
+    throw new AppError("NOT_FOUND", "User not found.", 404);
+  }
+
+  const passwordHash = await hashPassword(temporaryPassword);
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: targetUserId },
+      data: { passwordHash, failedLogins: 0, lockedUntil: null },
+    }),
+    prisma.session.deleteMany({ where: { userId: targetUserId } }),
+  ]);
+
+  await writeAudit({
+    actorId: actor.id,
+    action: "auth.admin_password_reset",
+    entity: "user",
+    entityId: targetUserId,
+    requestId,
+    metadata: { targetEmail: target.email },
+  });
+
+  return { ok: true };
+}
+
 export { COOKIE_NAME };

@@ -5,6 +5,7 @@ import {
   createRequisitionSchema,
   listRequisitionsQuery,
   transitionSchema,
+  updateRequisitionSchema,
   uuidParam,
   validateBody,
   validateParams,
@@ -16,6 +17,7 @@ import {
   getRequisition,
   listRequisitions,
   transitionRequisition,
+  updateDraftRequisition,
 } from "../services/requisitionService.js";
 
 export const requisitionsRouter = Router();
@@ -29,11 +31,13 @@ requisitionsRouter.get(
   async (req, res, next) => {
     try {
       const q = (req as typeof req & { validatedQuery?: Record<string, unknown> }).validatedQuery || {};
-      const data = await listRequisitions(q as {
-        query?: string;
-        status?: import("@prisma/client").RequisitionStatus;
-        departmentId?: string;
-      });
+      const data = await listRequisitions(
+        q as {
+          query?: string;
+          status?: import("@prisma/client").RequisitionStatus;
+          departmentId?: string;
+        }
+      );
       res.json({ data });
     } catch (err) {
       next(err);
@@ -67,6 +71,21 @@ requisitionsRouter.post(
     try {
       const data = await createRequisition(req.user!, req.body, req.requestId);
       res.status(201).json({ data });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+requisitionsRouter.patch(
+  "/:id",
+  requirePermission("requisition.edit"),
+  validateParams(uuidParam),
+  validateBody(updateRequisitionSchema),
+  async (req, res, next) => {
+    try {
+      const data = await updateDraftRequisition(req.user!, String(req.params.id), req.body, req.requestId);
+      res.json({ data });
     } catch (err) {
       next(err);
     }

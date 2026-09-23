@@ -2,6 +2,7 @@ import { Router } from "express";
 import { env } from "../config.js";
 import {
   COOKIE_NAME,
+  changePassword,
   login,
   logout,
   readSessionToken,
@@ -10,6 +11,7 @@ import {
 import { requestPasswordReset, confirmPasswordReset } from "../services/passwordResetService.js";
 import { requireAuth } from "../middleware/auth.js";
 import {
+  changePasswordSchema,
   loginSchema,
   passwordResetConfirmSchema,
   passwordResetRequestSchema,
@@ -20,8 +22,6 @@ export const authRouter = Router();
 
 function cookieSecure(req: import("express").Request) {
   if (env.COOKIE_SECURE) return true;
-  // Staging lab serves HTTP (:8088) and HTTPS (:8443) through the same API.
-  // Prefer Secure when the edge proxy reports HTTPS so HTTPS security checks pass.
   const xf = String(req.get("x-forwarded-proto") || "").split(",")[0].trim().toLowerCase();
   return req.secure || xf === "https";
 }
@@ -88,7 +88,6 @@ authRouter.get("/me", requireAuth, async (req, res) => {
 authRouter.post("/password-reset/request", validateBody(passwordResetRequestSchema), async (req, res, next) => {
   try {
     await requestPasswordReset(req.body.email, req.requestId);
-    // Always succeed to avoid email enumeration
     res.json({ data: { ok: true } });
   } catch (err) {
     next(err);
@@ -99,6 +98,16 @@ authRouter.post("/password-reset/confirm", validateBody(passwordResetConfirmSche
   try {
     await confirmPasswordReset(req.body.token, req.body.password, req.requestId);
     res.json({ data: { ok: true } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+authRouter.post("/change-password", requireAuth, validateBody(changePasswordSchema), async (req, res, next) => {
+  try {
+    await changePassword(req.user!.id, req.body.currentPassword, req.body.newPassword, req.requestId);
+    clearSessionCookie(req, res);
+    res.json({ data: { ok: true, message: "Password updated. Please sign in again.", requiresReLogin: true } });
   } catch (err) {
     next(err);
   }
