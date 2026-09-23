@@ -42,7 +42,7 @@ jobs:
       - name: Production demo build for GitHub Pages
         env:
           GITHUB_PAGES: "true"
-          VITE_BASE_PATH: /moh-gfrt/
+          VITE_BASE_PATH: /gfrt/
           VITE_DEMO_MODE: "true"
           VITE_DATA_SOURCE: mock
           VITE_STAGING_QUICK_LOGIN: "false"
@@ -59,8 +59,8 @@ jobs:
         run: |
           js=$(ls dist/assets/index-*.js | head -1)
           html=dist/index.html
-          if ! grep -q '/moh-gfrt/' "$html"; then
-            echo "Expected /moh-gfrt/ base references in index.html" >&2
+          if ! grep -q '/gfrt/' "$html"; then
+            echo "Expected /gfrt/ base references in index.html" >&2
             exit 1
           fi
           if grep -E '127\.0\.0\.1:4000|localhost:4000' "$js"; then
@@ -72,17 +72,17 @@ jobs:
       - name: Preview built site and run Playwright validate
         working-directory: .
         env:
-          CLONE_URL: http://127.0.0.1:4173/moh-gfrt
+          CLONE_URL: http://127.0.0.1:4173/gfrt
         run: |
           npx playwright install --with-deps chromium
           (
             cd clone
-            GITHUB_PAGES=true VITE_BASE_PATH=/moh-gfrt/ npx vite preview --host 127.0.0.1 --port 4173 --strictPort
+            GITHUB_PAGES=true VITE_BASE_PATH=/gfrt/ npx vite preview --host 127.0.0.1 --port 4173 --strictPort
           ) &
           preview_pid=$!
           trap 'kill $preview_pid 2>/dev/null || true' EXIT
           for i in $(seq 1 40); do
-            if curl -sf "http://127.0.0.1:4173/moh-gfrt/" >/dev/null; then
+            if curl -sf "http://127.0.0.1:4173/gfrt/" >/dev/null; then
               break
             fi
             sleep 1
@@ -92,7 +92,7 @@ jobs:
             fi
           done
           # Deep-link / refresh check (404.html SPA fallback)
-          code=$(curl -s -o /tmp/pages-deep.html -w "%{http_code}" "http://127.0.0.1:4173/moh-gfrt/requisitions")
+          code=$(curl -s -o /tmp/pages-deep.html -w "%{http_code}" "http://127.0.0.1:4173/gfrt/requisitions")
           # vite preview returns 200 with SPA middleware; also require 404.html present for real Pages
           test -f clone/dist/404.html
           npm run validate

@@ -4,21 +4,23 @@
 
 ## URL
 
-Repository (from `git remote`): `peter-cyber-create/moh-gfrt`  
-Pages URL: **https://peter-cyber-create.github.io/moh-gfrt/**
+Repository: `peter-cyber-create/gfrt` (public — required for GitHub Pages on this account)  
+Pages URL: **https://peter-cyber-create.github.io/gfrt/**
+
+Local clone may also track `origin` → `peter-cyber-create/moh-gfrt` (private staging repo). Pages deploys from the public `gfrt` remote.
 
 ## Architecture
 
 ```
-GitHub (main)
+GitHub (main on peter-cyber-create/gfrt)
   → Actions (.github/workflows/deploy-pages.yml)
-    → Vite build (VITE_DEMO_MODE=true, base=/moh-gfrt/)
+    → Vite build (VITE_DEMO_MODE=true, base=/gfrt/)
     → Playwright validate against vite preview
     → upload-pages-artifact + deploy-pages
-  → https://peter-cyber-create.github.io/moh-gfrt/
+  → https://peter-cyber-create.github.io/gfrt/
 ```
 
-Full production API remains a separate deployment (see `docs/VERCEL_DEPLOYMENT.md` / Docker runbooks):
+Full production API remains a separate deployment:
 
 ```
 Frontend → externally hosted API → PostgreSQL
@@ -26,37 +28,25 @@ Frontend → externally hosted API → PostgreSQL
 
 ## One-time GitHub settings
 
-1. Repository → **Settings → Pages**
-2. **Source:** GitHub Actions (not “Deploy from a branch”)
-3. Ensure Actions are allowed for the repo
+1. Open https://github.com/peter-cyber-create/gfrt/settings/pages  
+2. **Build and deployment → Source → GitHub Actions**  
+3. Ensure Actions are allowed for the repo  
 4. Push to `main` (or run **Deploy GitHub Pages** via workflow_dispatch)
 
-### Plan / visibility requirement
-
-GitHub Pages for **private** repositories requires a paid plan that includes Pages.  
-If `POST /repos/.../pages` returns *“Your current plan does not support GitHub Pages for this repository”*:
-
-- make the repository **public**, or
-- upgrade the org/user plan that includes private Pages, or
-- publish the static demo from a dedicated public mirror repo (same `base` path rules)
-
-Until Pages is enabled, the workflow can still **build and validate** the static site; the **deploy** job will not publish a live URL.
+The repository must be **public** (or on a plan that includes private Pages). Private repos on the free plan cannot enable Pages.
 
 ## Local build matching Pages
 
 ```bash
-cd clone
-GITHUB_PAGES=true VITE_BASE_PATH=/moh-gfrt/ VITE_DEMO_MODE=true VITE_DATA_SOURCE=mock npm run build
-cd ..
-bash scripts/pages-spa-fallback.sh
-cd clone && npx vite preview --host 127.0.0.1 --port 4173
-# Open http://127.0.0.1:4173/moh-gfrt/
-CLONE_URL=http://127.0.0.1:4173/moh-gfrt npm run validate
+npm run pages:build
+cd clone && GITHUB_PAGES=true VITE_BASE_PATH=/gfrt/ npx vite preview --host 127.0.0.1 --port 4173
+# Open http://127.0.0.1:4173/gfrt/
+CLONE_URL=http://127.0.0.1:4173/gfrt npm run validate
 ```
 
 ## SPA deep links
 
-GitHub Pages has no server rewrite to `index.html`. After each build, `scripts/pages-spa-fallback.sh` copies `index.html` → `404.html` so nested routes (`/moh-gfrt/requisitions`, refresh, etc.) load the SPA.
+GitHub Pages has no server rewrite to `index.html`. After each build, `scripts/pages-spa-fallback.sh` copies `index.html` → `404.html` so nested routes (`/gfrt/requisitions`, refresh, etc.) load the SPA.
 
 ## Demo safety
 

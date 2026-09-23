@@ -2,11 +2,11 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
 
 /**
- * GitHub Pages project site lives at:
- *   https://peter-cyber-create.github.io/moh-gfrt/
- * Local / Docker / Vercel same-origin hosts use base "/".
+ * GitHub Pages project site:
+ *   https://peter-cyber-create.github.io/gfrt/
+ * Local / Docker / same-origin hosts use base "/".
  *
- * Override with VITE_BASE_PATH (must end with "/"), e.g. VITE_BASE_PATH=/moh-gfrt/
+ * Override with VITE_BASE_PATH (must end with "/"), e.g. VITE_BASE_PATH=/gfrt/
  */
 function resolveBase(mode, env) {
   const fromEnv = (env.VITE_BASE_PATH || process.env.VITE_BASE_PATH || "").trim();
@@ -15,7 +15,7 @@ function resolveBase(mode, env) {
     return withSlashes.endsWith("/") ? withSlashes : `${withSlashes}/`;
   }
   if (env.GITHUB_PAGES === "true" || process.env.GITHUB_PAGES === "true") {
-    return "/moh-gfrt/";
+    return "/gfrt/";
   }
   return "/";
 }
