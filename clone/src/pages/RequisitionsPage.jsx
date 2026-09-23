@@ -184,7 +184,7 @@ export default function RequisitionsPage() {
     <div data-testid="requisitions-page">
       <PageHeader
         title="Requisitions"
-        subtitle="Operational requisitions loaded from the staging API."
+        subtitle="Requisition register."
         breadcrumb="Operations / Requisitions"
         actions={
           <button type="button" className="btn btn-primary btn-sm" disabled={!can("requisition.create")} onClick={openCreate}>
@@ -295,29 +295,26 @@ export default function RequisitionsPage() {
                 <thead>
                   <tr>
                     <th scope="col" className="sortable-th" onClick={() => toggleSort("id")}>
-                      ID {sort === "id" ? (sortDir === "asc" ? "↑" : "↓") : ""}
+                      Reference {sort === "id" ? (sortDir === "asc" ? "↑" : "↓") : ""}
                     </th>
-                    <th scope="col">Facility</th>
-                    <th scope="col">District</th>
                     <th scope="col">Department</th>
-                    <th scope="col" className="sortable-th" onClick={() => toggleSort("status")}>
-                      Status
-                    </th>
+                    <th scope="col">Requester</th>
                     <th scope="col" className="sortable-th" onClick={() => toggleSort("amountValue")}>
                       Amount
                     </th>
-                    <th scope="col" className="sortable-th" onClick={() => toggleSort("submitted")}>
-                      Submitted
+                    <th scope="col" className="sortable-th" onClick={() => toggleSort("status")}>
+                      Status
                     </th>
-                    <th scope="col">
-                      <span className="sr-only">Actions</span>
+                    <th scope="col" className="sortable-th" onClick={() => toggleSort("updated")}>
+                      Updated
                     </th>
+                    <th scope="col">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pageRows.length === 0 ? (
                     <tr>
-                      <td colSpan={8}>
+                      <td colSpan={7}>
                         <EmptyState
                           title="No requisitions found"
                           message="Adjust filters or reset to see requisition records."
@@ -333,16 +330,15 @@ export default function RequisitionsPage() {
                     pageRows.map((row) => (
                       <tr key={row.id} data-status-code={row.statusCode}>
                         <td className="small font-monospace">{row.id}</td>
-                        <td>{row.facility}</td>
-                        <td>{row.district}</td>
                         <td>{row.department}</td>
+                        <td>{row.requester}</td>
+                        <td>{row.amount}</td>
                         <td>
                           <StatusBadge status={row.status} statusCode={row.statusCode} />
                         </td>
-                        <td>{row.amount}</td>
-                        <td>{row.submitted}</td>
-                        <td className="text-right text-nowrap">
-                          <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => openDetails(row)}>
+                        <td className="meta-text">{row.updated}</td>
+                        <td className="text-nowrap">
+                          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => openDetails(row)}>
                             View
                           </button>
                         </td>

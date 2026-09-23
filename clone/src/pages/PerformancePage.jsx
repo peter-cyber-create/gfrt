@@ -50,7 +50,7 @@ export default function PerformancePage() {
     <div data-testid="performance-page">
       <PageHeader
         title="Performance"
-        subtitle="Indicators derived from staging requisition data."
+        subtitle="Requisition status."
         breadcrumb="Operations / Performance"
       />
 

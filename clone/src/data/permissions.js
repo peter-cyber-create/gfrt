@@ -56,7 +56,24 @@ export const ROLE_PERMISSIONS = {
     "requisition.submit",
     "report.view",
   ],
-  Reviewer: ["requisition.view", "report.view", "report.export"],
+  /** Presentation “User” account — facility-operator capabilities */
+  User: [
+    "requisition.view",
+    "requisition.create",
+    "requisition.edit",
+    "requisition.submit",
+    "report.view",
+    "settings.view",
+  ],
+  /** Presentation “Reviewer” — review/approve without user administration */
+  Reviewer: [
+    "requisition.view",
+    "requisition.approve",
+    "requisition.reject",
+    "report.view",
+    "report.export",
+    "settings.view",
+  ],
   Viewer: ["requisition.view", "report.view"],
 };
 

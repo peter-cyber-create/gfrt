@@ -14,7 +14,7 @@ export default function RolesPage() {
 
   return (
     <div>
-      <PageHeader title="Roles" subtitle="Role definitions and proposed permission summaries (not production-verified)." breadcrumb="Management / Roles" />
+      <PageHeader title="Roles" subtitle="Roles and permissions." breadcrumb="Management / Roles" />
 
       <div className="row">
         {rows.map((role) => (

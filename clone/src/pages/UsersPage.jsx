@@ -111,7 +111,7 @@ export default function UsersPage() {
     <div>
       <PageHeader
         title="Users"
-        subtitle="User administration against the staging API."
+        subtitle="User administration."
         breadcrumb="Management / Users"
         actions={
           <button type="button" className="btn btn-primary btn-sm" onClick={openAdd} disabled={!can("user.manage")}>

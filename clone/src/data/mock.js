@@ -226,9 +226,9 @@ export const reportCatalog = [
 /** Sidebar navigation — sectioned enterprise shell */
 export const navSections = [
   {
-    id: "main",
-    label: null,
-    items: [{ path: "/home", label: "Dashboard", icon: "fas fa-tachometer-alt" }],
+    id: "overview",
+    label: "Overview",
+    items: [{ path: "/home", label: "Dashboard", icon: "fas fa-th-large" }],
   },
   {
     id: "operations",
@@ -239,19 +239,19 @@ export const navSections = [
     ],
   },
   {
+    id: "reporting",
+    label: "Reporting",
+    items: [
+      { path: "/analytics", label: "Analytics", icon: "fas fa-chart-pie" },
+      { path: "/reports", label: "Reports", icon: "fas fa-chart-bar" },
+    ],
+  },
+  {
     id: "management",
     label: "Management",
     items: [
       { path: "/users", label: "Users", icon: "fas fa-users" },
       { path: "/roles", label: "Roles", icon: "fas fa-user-shield" },
-    ],
-  },
-  {
-    id: "reporting",
-    label: "Reporting",
-    items: [
-      { path: "/reports", label: "Reports", icon: "fas fa-chart-bar" },
-      { path: "/analytics", label: "Analytics", icon: "fas fa-chart-pie" },
     ],
   },
   {
@@ -270,6 +270,17 @@ export const pageTitles = {
   "/reports": "Reports",
   "/analytics": "Analytics",
   "/settings": "Settings",
+};
+
+export const pageSubtitles = {
+  "/home": "Requisition operations overview.",
+  "/requisitions": "Requisition register.",
+  "/performance": "Requisition status.",
+  "/users": "User administration.",
+  "/roles": "Roles and permissions.",
+  "/reports": "Report catalogue.",
+  "/analytics": "Filtered operational analytics.",
+  "/settings": "Preferences and audit.",
 };
 
 /** Back-compat exports used by older imports */

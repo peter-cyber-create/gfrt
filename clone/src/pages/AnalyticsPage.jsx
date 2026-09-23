@@ -82,7 +82,7 @@ export default function AnalyticsPage() {
     <div data-testid="analytics-page">
       <PageHeader
         title="Analytics"
-        subtitle="Management view over staging requisition data."
+        subtitle="Filtered operational analytics."
         breadcrumb="Reporting / Analytics"
         actions={
           <button type="button" className="btn btn-outline-primary btn-sm" id="analyticsExportBtn" onClick={exportCsv}>

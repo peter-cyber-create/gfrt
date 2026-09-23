@@ -57,7 +57,7 @@ export default function SettingsPage() {
 
   return (
     <div data-testid="settings-page">
-      <PageHeader title="Settings" subtitle="Local presentation preferences — not production configuration." breadcrumb="System / Settings" />
+      <PageHeader title="Settings" subtitle="Preferences and audit." breadcrumb="System / Settings" />
 
       <ul className="nav nav-tabs settings-tabs mb-3" role="tablist">
         {TABS.map((t) => (

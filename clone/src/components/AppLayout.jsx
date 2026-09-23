@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { DEMO_MODE, navSections, pageTitles } from "../data/mock";
+import { DEMO_MODE, navSections, pageSubtitles, pageTitles } from "../data/mock";
 import { assetUrl } from "../lib/assetUrl.js";
 import { getDataSource, notificationService } from "../services/index.js";
 import DemoBadge from "./DemoBadge";
@@ -21,6 +21,7 @@ export default function AppLayout() {
   const dataSource = getDataSource();
 
   const title = pageTitles[location.pathname] || "Application";
+  const subtitle = pageSubtitles[location.pathname] || "";
   const unread = notifications.filter((n) => n.unread).length;
 
   const filteredSections = useMemo(() => {
@@ -67,10 +68,10 @@ export default function AppLayout() {
       <aside className={`app-sidebar ${mobileOpen ? "open" : ""}`} aria-label="Primary">
         <div className="sidebar-head">
           <Link to="/home" className="sidebar-brand-link" onClick={() => setMobileOpen(false)}>
-            <img src={assetUrl("img/coa2.png")} alt="" height="32" />
+            <img src={assetUrl("img/coa2.png")} alt="" height="28" />
             {!collapsed && (
               <div className="sidebar-brand-text">
-                <strong>GFRPT</strong>
+                <strong>GFRT</strong>
                 <span>Requisition Tracker</span>
               </div>
             )}
@@ -108,10 +109,16 @@ export default function AppLayout() {
           ))}
         </nav>
 
-        <div className="sidebar-foot d-none d-md-flex">
+        <div className="sidebar-foot">
+          {!collapsed && user && (
+            <div className="sidebar-user">
+              <div className="sidebar-user-name">{user.name || user.email}</div>
+              <div className="sidebar-user-role">{user.role}</div>
+            </div>
+          )}
           <button
             type="button"
-            className="btn btn-sm btn-light btn-block"
+            className="btn btn-sm btn-light btn-block d-none d-md-inline-block"
             onClick={() => setCollapsed((v) => !v)}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
@@ -135,12 +142,13 @@ export default function AppLayout() {
               <i className="fas fa-bars" />
             </button>
             <div>
-              <div className="topnav-breadcrumb text-muted small">
+              <div className="topnav-breadcrumb text-muted">
                 <Link to="/home">Home</Link>
                 <span className="mx-1">/</span>
                 <span>{title}</span>
               </div>
-              <h1 className="topnav-title h5 mb-0">{title}</h1>
+              <h1 className="topnav-title">{title}</h1>
+              {subtitle && <div className="topnav-subtitle text-muted">{subtitle}</div>}
             </div>
           </div>
 
@@ -181,9 +189,7 @@ export default function AppLayout() {
                   notifications.map((n) => (
                     <div className={`dropdown-item-text notif-item ${n.unread ? "unread" : ""}`} key={n.id}>
                       <div className="small">{n.text}</div>
-                      <div className="text-muted" style={{ fontSize: "0.72rem" }}>
-                        {n.time}
-                      </div>
+                      <div className="text-muted meta-text">{n.time}</div>
                     </div>
                   ))
                 )}

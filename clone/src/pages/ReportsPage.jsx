@@ -89,7 +89,7 @@ export default function ReportsPage() {
     <div>
       <PageHeader
         title="Reports"
-        subtitle="Generate and preview reports from staging data."
+        subtitle="Report catalogue."
         breadcrumb="Reporting / Reports"
         actions={
           <button type="button" className="btn btn-outline-primary btn-sm" id="exportReportBtn" onClick={exportCsv}>
