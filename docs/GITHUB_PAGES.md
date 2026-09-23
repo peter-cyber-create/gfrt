@@ -46,7 +46,12 @@ CLONE_URL=http://127.0.0.1:4173/gfrt npm run validate
 
 ## SPA deep links
 
-GitHub Pages has no server rewrite to `index.html`. After each build, `scripts/pages-spa-fallback.sh` copies `index.html` → `404.html` so nested routes (`/gfrt/requisitions`, refresh, etc.) load the SPA.
+GitHub Pages has no server rewrite to `index.html`. After each build, `scripts/pages-spa-fallback.sh`:
+
+1. Writes a real `index.html` shell under each known client route (`login/`, `home/`, `requisitions/`, …) so direct open / refresh return **HTTP 200**.
+2. Still writes `404.html` only as a safety net for unknown paths.
+
+Do not rely on the GitHub 404 page for known application routes.
 
 ## Demo safety
 

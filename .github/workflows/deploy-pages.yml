@@ -51,11 +51,11 @@ jobs:
           VITE_API_BASE_URL: ""
         run: npm run build
 
-      - name: SPA fallback for GitHub Pages deep links
+      - name: SPA route shells for GitHub Pages deep links
         working-directory: .
         run: bash scripts/pages-spa-fallback.sh
 
-      - name: Assert base path and demo safety in bundle
+      - name: Assert base path, route shells, and demo safety
         run: |
           js=$(ls dist/assets/index-*.js | head -1)
           html=dist/index.html
@@ -63,11 +63,19 @@ jobs:
             echo "Expected /gfrt/ base references in index.html" >&2
             exit 1
           fi
+          if grep -E 'href="/app\.css"|src="/assets/' "$html"; then
+            echo "Forbidden root-absolute asset paths in index.html" >&2
+            exit 1
+          fi
           if grep -E '127\.0\.0\.1:4000|localhost:4000' "$js"; then
             echo "Forbidden localhost API base in Pages bundle" >&2
             exit 1
           fi
-          echo "Pages bundle checks passed ($js)"
+          for route in login register password/reset password/reset/confirm home requisitions performance users roles reports analytics settings; do
+            test -f "dist/${route}/index.html" || { echo "Missing route shell: ${route}/index.html" >&2; exit 1; }
+          done
+          test -f dist/404.html
+          echo "Pages bundle + route shells OK ($js)"
 
       - name: Preview built site and run Playwright validate
         working-directory: .
@@ -91,10 +99,10 @@ jobs:
               exit 1
             fi
           done
-          # Deep-link / refresh check (404.html SPA fallback)
-          code=$(curl -s -o /tmp/pages-deep.html -w "%{http_code}" "http://127.0.0.1:4173/gfrt/requisitions")
-          # vite preview returns 200 with SPA middleware; also require 404.html present for real Pages
-          test -f clone/dist/404.html
+          for route in login home requisitions settings; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:4173/gfrt/${route}")
+            test "$code" = "200" || { echo "Expected 200 for /${route}, got ${code}" >&2; exit 1; }
+          done
           npm run validate
 
       - name: Upload Pages artifact
